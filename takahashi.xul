@@ -2925,6 +2925,7 @@ var Presentation = {
  
 	toggleEditStyle : function(aEvent) 
 	{
+		if (!this.source) return;
 		var tabbox = document.getElementById('editTabBox');
 		var tab = tabbox.selectedTab;
 		if (tab.id == 'editTab-pages') {
