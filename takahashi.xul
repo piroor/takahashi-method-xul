@@ -28,7 +28,7 @@
    - in XUL/Returns.
    -
    - The Initial Developer of the Original Code is SHIMODA Hiroshi.
-   - Portions created by the Initial Developer are Copyright (C) 2005-2007
+   - Portions created by the Initial Developer are Copyright (C) 2005-2009
    - the Initial Developer. All Rights Reserved.
    -
    - Contributor(s): SHIMODA Hiroshi <piro@p.club.ne.jp>
@@ -1125,7 +1125,6 @@ const XHTMLNS = 'http://www.w3.org/1999/xhtml';
 var Presentation = { 
 	 
 	baseSize        : 9, 
-	montaLabelImage : 'monta-label.png',
 
 	phraseOpenParen  : '[',
 	phraseCloseParen : ']',
@@ -1148,9 +1147,10 @@ var Presentation = {
 
 	preventToShowHideToolbar : false,
 
-	showMontaKeywordTimeout : 100,
-	autoCruiseInterval      : 2000,
-	timerUpdatingInterval   : 30000,
+	loadingTimeout           : 10000,
+	showMontaKeywordDuration : 100,
+	autoCruiseInterval       : 2000,
+	timerUpdatingInterval    : 30000,
 
 	cachedContents : [],
 	sourceData     : [],
@@ -1187,8 +1187,6 @@ var Presentation = {
 		this.isToolbarHidden = true;
 		this.toolbar.setAttribute('style', 'margin-top:'+(0-this.toolbarHeight)+'px;margin-bottom:0px;');
 
-		this.preloadImage(this.montaLabelImage);
-
 		window.addEventListener('resize', this, false);
 		window.addEventListener('contextmenu', this, false);
 		window.addEventListener('CanvasContentAdded', this, false);
@@ -1211,12 +1209,29 @@ var Presentation = {
  
 /* core */ 
 	
-	startPresentation : function() 
+	startPresentation : function(aStart) 
 	{
 		if (this.data.length)
 			document.title = this.data[0].title || this.data[0].header || this.data[0].text.join(' ');
 
-		this.takahashi();
+		var now = (new Date()).getTime();
+		if (aStart === void(0)) aStart = now;
+
+		if (this.ready || now - aStart >= this.loadingTimeout)
+			this.takahashi();
+		else
+			window.setTimeout(function(aSelf) {
+				aSelf.startPresentation(aStart);
+			}, 100, this);
+	},
+	get ready()
+	{
+		for (var i in this.images)
+		{
+			if (!this.images[i].loaded)
+				return false;
+		}
+		return true;
 	},
  
 /* rendering */ 
@@ -1332,7 +1347,9 @@ var Presentation = {
 		var newLine;
 		var uri;
 		var image_width;
+		var images_width;
 		var image_height;
+		var images_height;
 		var image_src;
 
 		var labelId = 0;
@@ -1354,7 +1371,7 @@ var Presentation = {
 		var styleStartRegExp = this.makePhraseRegExp('^([^%O]+)?%O%O(#([^:{]*))?({([^}]*)})?:(.*)', '');
 		var styleEndRegExp   = this.makePhraseRegExp('^(.*?)(%C%C)', '');
 
-		var imagesRegExp     = this.makePhraseRegExp('^([^%O]+)?%O%Oima?ge? +src="([^"]+)" +width="([0-9]+)" +height="([0-9]+)"[^%C]*%C%C', 'i');
+		var imagesRegExp     = this.makePhraseRegExp('^([^%O]+)?%O%Oima?ge?\\s+src="([^"]+)"(\\s+(width|height)="([0-9]+%?)"(\\s+(width|height)="([0-9]+%?)")?)?\\s*[^%C]*%C%C', 'i');
 
 		var linksRegExp      = this.makePhraseRegExp('^([^%O]+)?%O%O(([^|]+)?\\||)([^%C]+)%C%C', '');
 
@@ -1378,8 +1395,8 @@ var Presentation = {
 			lineBox.setAttribute('pack', this.data[this.offset].align);
 
 			line = text[i];
-			image_width  = 0;
-			image_height = 0;
+			images_width  = 0;
+			images_height = 0;
 			if (!line) line = ' ';
 
 			if (inBlock) {
@@ -1563,17 +1580,30 @@ var Presentation = {
 
 				// Images
 				else if (imagesRegExp.test(line)) {
-					lineBox.appendChild(document.createElement('image'));
 					image_src = RegExp.$2;
 					if (image_src.indexOf('http://') < 0 &&
 						image_src.indexOf('https://') < 0 &&
 						image_src.indexOf('data:') < 0)
 						image_src = this.dataFolder+image_src;
-					lineBox.lastChild.setAttribute('src', image_src);
-					lineBox.lastChild.setAttribute('width', parseInt(RegExp.$3 || '0'));
-					lineBox.lastChild.setAttribute('height', parseInt(RegExp.$4 || '0'));
-					image_width  += parseInt(RegExp.$3 || '0');
-					image_height = Math.max(image_height, parseInt(RegExp.$4 || '0'));
+					image_width = -1;
+					image_height = -1;
+					if (RegExp.$3) {
+						if (RegExp.$4.toLowerCase() == 'width')
+							image_width = RegExp.$5 || '0';
+						else
+							image_height = RegExp.$5 || '0';
+					}
+					if (RegExp.$6) {
+						if (RegExp.$7.toLowerCase() == 'width')
+							image_width = RegExp.$8 || '0';
+						else
+							image_height = RegExp.$8 || '0';
+					}
+					lineBox.appendChild(this.createImage(image_src, image_width, image_height));
+					image_width = parseInt(lineBox.lastChild.getAttribute('width'));
+					image_height = parseInt(lineBox.lastChild.getAttribute('height'));
+					images_width  += image_width;
+					images_height = Math.max(images_height, image_height);
 				}
 
 				// Links
@@ -1618,8 +1648,8 @@ var Presentation = {
 				lineBox.lastChild.setAttribute('value', line);
 			}
 
-			retVal.offsetWidth = Math.max(retVal.offsetWidth, image_width);
-			retVal.offsetHeight += image_height;
+			retVal.offsetWidth = Math.max(retVal.offsetWidth, images_width);
+			retVal.offsetHeight += images_height;
 
 			if (lineBox.hasChildNodes())
 				fragment.appendChild(lineBox);
@@ -1627,6 +1657,41 @@ var Presentation = {
 
 		retVal.fragment = fragment;
 		return retVal;
+	},
+	createImage : function(aURI, aWidth, aHeight)
+	{
+		var image = document.createElement('image')
+		image.setAttribute('src', aURI);
+
+		var info = this.images[aURI];
+		var width = info.width;
+		var height = info.height;
+
+		if (aWidth != -1 && aWidth.indexOf('%') > 0) {
+			aWidth = width * Number(aWidth.replace('%', '')) * 0.01;
+			aWidth = aWidth.toString();
+		}
+		if (aHeight != -1 && aHeight.indexOf('%') > 0) {
+			aHeight = height * Number(aHeight.replace('%', '')) * 0.01;
+			aHeight = aHeight.toString();
+		}
+
+		if (aWidth != -1 && aHeight != -1) {
+			width = parseInt(aWidth);
+			height = parseInt(aHeight);
+		}
+		else if (aWidth != -1) {
+			width = parseInt(aWidth);
+			height = height / (info.width / width);
+		}
+		else if (aHeight != -1) {
+			height = parseInt(aHeight);
+			width = width / (info.height / height);
+		}
+
+		image.setAttribute('width', width);
+		image.setAttribute('height', height);
+		return image;
 	},
   
 	fitToCanvas : function(aContent, aCanvas, aOffsetWidth, aOffsetHeight) 
@@ -1781,13 +1846,15 @@ var Presentation = {
 		var sizeRegExp  = /^((GLOBAL-)?SIZE::)(\d+(\.\d+)?)\n?/im;
 
 		var imageMatchResults;
-		var imagesRegExp  = this.makePhraseRegExp('%O%Oima?ge? +src="[^"]+" +width="[0-9]+" +height="[0-9]+"[^%C]*%C%C', 'gi');
-		var imagesRegExp2 = this.makePhraseRegExp('%O%Oima?ge? +src="([^"]+)"', 'i');
+		var imagesRegExp  = this.makePhraseRegExp('%O%Oima?ge?\\s+src="[^"]+"(\\s+(width|height)="[0-9]+"(\\s+(width|height)="[0-9]+")?)?\\s*[^%C]*%C%C', 'gi');
+		var imagesRegExp2 = this.makePhraseRegExp('%O%Oima?ge?\\s+src="([^"]+)"', 'i');
 		var image_src;
 
 		var plainTextRegExp = this.makePhraseRegExp('(%O%O\#[^:]+:(.+)%C%C|%O%OEM:(.+)(:EM)?%C%C|%O%OPRE:(.+)(:PRE)?%C%C|%O%Oima?ge? +src="[^"]*"[^%C]+%C%C|%O%O([^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
 
-		var hiddenRegExp = /^(HIDDEN|IGNORE)::true\n?/im;
+		var hiddenRegExp = /^(HIDDEN|IGNORE)::(true|yes|1)\n?/im;
+		var styleRegExp = /^(STYLE|CSS)::(true|yes|1)/im;
+
 
 		var loadRegExp  = /^LOAD::(.+)\n?/im;
 		var timerRegExp = /^SET-TIMER::(\d+)(.*)\n?/im;
@@ -1843,6 +1910,22 @@ var Presentation = {
 						aSelf.setTimer(aTime);
 					}
 				}, 100, this, parseInt(RegExp.$1), (RegExp.$2 || '').toLowerCase());
+			}
+
+			if (styleRegExp.test(this._data[i])) {
+				document.insertBefore(
+					document.createProcessingInstruction(
+						'xml-stylesheet',
+						'href="data:text/css,'+
+							escape(this._data[i].replace(styleRegExp, ''))+
+							'" type="text/css"'
+					),
+					document.documentElement
+				);
+				this._data.splice(i, 1);
+				max--;
+				i--;
+				continue;
 			}
 
 			if (hiddenRegExp.test(this._data[i])) {
@@ -1903,7 +1986,7 @@ var Presentation = {
 			imageMatchResults = this._data[i].match(imagesRegExp);
 			if (imageMatchResults) {
 				for (j = imageMatchResults.length-1; j > -1; j--)
-					image_src = this.preloadImage(imageMatchResults[j].match(imagesRegExp2)[1]);
+					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
 			}
 
 			this._data[i] = {
@@ -1911,7 +1994,6 @@ var Presentation = {
 				header : header,
 				footer : footer,
 				text   : this._data[i].split('\n'),
-				image  : image_src,
 				align  : align || alignGlobal,
 				size   : size || sizeGlobal
 			};
@@ -1945,11 +2027,6 @@ var Presentation = {
 				(this._data[i].plain.join('') || this._data[i].text.join(' ')).replace(/\s+/g, ' ')
 			));
 			popup.lastChild.setAttribute('value', i);
-
-//			if (image_src) {
-//				popup.lastChild.setAttribute('image', image_src);
-//				popup.lastChild.setAttribute('class', 'menuitem-iconic');
-//			}
 		}
 
 		if (menuContents.childNodes.length == 1) {
@@ -2034,28 +2111,30 @@ var Presentation = {
 		return true;
 	},
  
-	preloadImage : function(aURI) 
+	registerImage : function(aURI) 
 	{
-		if (aURI in this.imageRequests) return;
+		if (aURI in this.images) return;
 
 		if (aURI.indexOf('http://') < 0 &&
 			aURI.indexOf('https://') < 0)
 			aURI = this.dataFolder+aURI;
 
-		this.imageRequests[aURI] = new XMLHttpRequest();
-		try {
-			this.imageRequests[aURI].open('GET', aURI);
-			this.imageRequests[aURI].onload = function() {
-				Presentation.imageRequests[aURI] = null;
-			};
-			this.imageRequests[aURI].send(null);
-		}
-		catch(e) {
-			this.imageRequests[aURI] = null;
-		}
-		return aURI;
+		var info = {
+			width  : -1,
+			height : -1,
+			loaded : false
+		};
+		info.image = new Image();
+		info.image.src = aURI;
+		info.image.addEventListener('load', function() {
+			info.width = info.image.width;
+			info.height = info.image.height;
+			info.loaded = true;
+			info.image.removeEventListener('load', arguments.callee, false);
+		}, false);
+		this.images[aURI] = info;
 	},
-	imageRequests : {},
+	images : {},
   
 /* commands */ 
 	
@@ -2509,9 +2588,7 @@ var Presentation = {
 
 			case 'contextmenu':
 				aEvent.stopPropagation();
-				aEvent.preventCapture();
 				aEvent.preventDefault();
-				aEvent.preventBubble();
 				break;
 
 
@@ -2594,7 +2671,7 @@ var Presentation = {
 		{
 			case aEvent.DOM_VK_BACK_SPACE:
 				if (this.isPresentationMode) {
-					aEvent.preventBubble();
+					aEvent.stopPropagation();
 					aEvent.preventDefault();
 					Presentation.back();
 				}
@@ -2634,7 +2711,7 @@ var Presentation = {
 					case 'monta-label':
 						if (aEvent.target.getAttribute('monta-hidden') == 'true') {
 							this.showMontaKeyword(aEvent.target);
-							aEvent.preventBubble();
+							aEvent.stopPropagation();
 							return;
 						}
 
@@ -2723,7 +2800,7 @@ var Presentation = {
 		window.setTimeout(this.showMontaKeywordCallback, 0, {
 			position : -100,
 			node     : aNode,
-			interval : this.showMontaKeywordTimeout/10
+			interval : this.showMontaKeywordDuration/10
 		});
 	},
 	
@@ -3058,9 +3135,7 @@ var StrokeService = {
 			case 'click':
 				if (this.preventToSendClickEvent) {
 					aEvent.stopPropagation();
-					aEvent.preventCapture();
 					aEvent.preventDefault();
-					aEvent.preventBubble();
 					this.preventToSendClickEvent = false;
 				}
 				else if (this.cliclableNodesManager && this.cliclableNodesManager.clickableNodes) {
