@@ -1648,7 +1648,8 @@ var Presentation = {
 				lineBox.lastChild.setAttribute('value', line);
 			}
 
-			retVal.offsetWidth = Math.max(retVal.offsetWidth, images_width);
+			if (images_width && lineBox.childNodes.length > 1)
+				retVal.offsetWidth = Math.max(retVal.offsetWidth, images_width);
 			retVal.offsetHeight += images_height;
 
 			if (lineBox.hasChildNodes())
