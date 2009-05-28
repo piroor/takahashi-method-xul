@@ -1221,6 +1221,14 @@ var Presentation = {
 
 		document.documentElement.focus();
 	},
+	get canvasWidth()
+	{
+		return window.innerWidth;
+	},
+	get canvasHeight()
+	{
+		return window.innerHeight - this.indicatorBar.boxObject.height;
+	},
  
 /* core */ 
 	
@@ -1294,14 +1302,16 @@ var Presentation = {
 		this.footer.value = this.data[this.offset].footer;
 
 		var page = this.content.getAttribute('page');
-		var range = document.createRange();
-		range.selectNodeContents(this.content);
-		this.cachedContents[page] = !this.content.hasChildNodes() ? null : {
-			fragment     : range.extractContents(),
-			offsetWidth  : parseInt(this.content.getAttribute('offsetWidth')),
-			offsetHeight : parseInt(this.content.getAttribute('offsetHeight'))
-		};
-		range.detach();
+		if (page != this.offset) {
+			this.cachedContents[page] = !this.content.hasChildNodes() ? null : {
+				fragment     : this.clearContent(),
+				offsetWidth  : parseInt(this.content.getAttribute('offsetWidth')),
+				offsetHeight : parseInt(this.content.getAttribute('offsetHeight'))
+			};
+		}
+		else {
+			this.clearContent();
+		}
 
 
 		if (this.data[this.offset].load) {
@@ -1349,6 +1359,14 @@ var Presentation = {
 		var event = document.createEvent('Events');
 		event.initEvent('PresentationRedraw', false, true);
 		this.canvas.dispatchEvent(event);
+	},
+	clearContent : function()
+	{
+		var range = document.createRange();
+		range.selectNodeContents(this.content);
+		var fragment = range.extractContents()
+		range.detach();
+		return fragment;
 	},
 	
 	createContent : function() 
@@ -1684,11 +1702,11 @@ var Presentation = {
 		var height = info.height;
 
 		if (aWidth != -1 && aWidth.indexOf('%') > 0) {
-			aWidth = this.canvas.boxObject.width * Number(aWidth.replace('%', '')) * 0.01;
+			aWidth = this.canvasWidth * Number(aWidth.replace('%', '')) * 0.01;
 			aWidth = aWidth.toString();
 		}
 		if (aHeight != -1 && aHeight.indexOf('%') > 0) {
-			aHeight = this.canvas.boxObject.height * Number(aHeight.replace('%', '')) * 0.01;
+			aHeight = this.canvasHeight * Number(aHeight.replace('%', '')) * 0.01;
 			aHeight = aHeight.toString();
 		}
 
@@ -1706,8 +1724,8 @@ var Presentation = {
 		}
 
 		// fit to window
-		var maxW = this.canvas.boxObject.width;
-		var maxH = this.canvas.boxObject.height;
+		var maxW = this.canvasWidth;
+		var maxH = this.canvasHeight;
 		if (width > maxW) {
 			height = height / (width / maxW);
 			width = maxW;
@@ -2545,8 +2563,8 @@ var Presentation = {
 		if (this.plainTextShown) return;
 		this.plainTextShown = true;
 		this.plainTextBox.removeAttribute('hidden');
-		this.plainTextField.style.width = parseInt(this.canvas.boxObject.width * 0.8)+'px';
-		this.plainTextField.style.height = parseInt(this.canvas.boxObject.height * 0.8)+'px';
+		this.plainTextField.style.width = parseInt(this.canvasWidth * 0.8)+'px';
+		this.plainTextField.style.height = parseInt(this.canvasHeight * 0.8)+'px';
 		this.plainTextField.value = this.data[this.offset].text.join('\n').replace(/\u200b/g, '');
 		this.plainTextField.select();
 		this.plainTextField.focus();
@@ -2602,8 +2620,9 @@ var Presentation = {
 			}
 
 			node = node.parentNode;
+			if (node == document) break;
 		}
-		while (node.parentNode)
+		while (node && node.parentNode)
 
 
 		switch (aEvent.type)
@@ -2612,6 +2631,7 @@ var Presentation = {
 				break;
 
 			case 'resize':
+				this.cachedContents = [];
 				this.takahashi(); // redrwa
 				break;
 
