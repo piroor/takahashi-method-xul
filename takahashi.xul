@@ -1359,6 +1359,9 @@ var Presentation = {
 		var event = document.createEvent('Events');
 		event.initEvent('PresentationRedraw', false, true);
 		this.canvas.dispatchEvent(event);
+
+		this.lastWidth = window.innerWidth;
+		this.lastHeight = window.innerHeight;
 	},
 	clearContent : function()
 	{
@@ -2631,8 +2634,21 @@ var Presentation = {
 				break;
 
 			case 'resize':
-				this.cachedContents = [];
-				this.takahashi(); // redrwa
+				if (this.onResizeTimer) {
+					window.clearTimeout(this.onResizeTimer);
+					this.onResizeTimer = null;
+				}
+				this.onResizeTimer = window.setTimeout(function(aSelf) {
+					aSelf.onResizeTimer = null;
+					if (
+						inRawContents ||
+						aSelf.lastWidth != window.innerWidth ||
+						aSelf.lastHeight != window.innerHeight
+						) {
+						aSelf.cachedContents = [];
+						aSelf.takahashi(); // redrwa
+					}
+				}, 250, this);
 				break;
 
 			case 'contextmenu':
