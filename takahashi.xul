@@ -1690,13 +1690,15 @@ var Presentation = {
 		}
 
 		// fit to window
-		if (width > window.innerWidth) {
-			height = height / (width / window.innerWidth);
-			width = window.innerWidth;
+		var maxW = window.innerWidth - 20;
+		var maxH = window.innerHeight - 20;
+		if (width > maxW) {
+			height = height / (width / maxW);
+			width = maxW;
 		}
-		if (height > window.innerHeight) {
-			width = width / (height / window.innerHeight);
-			height = window.innerHeight;
+		if (height > maxH) {
+			width = width / (height / maxH);
+			height = maxH;
 		}
 
 		image.setAttribute('width', width);
