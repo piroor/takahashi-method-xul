@@ -1689,6 +1689,16 @@ var Presentation = {
 			width = width / (info.height / height);
 		}
 
+		// fit to window
+		if (width > window.innerWidth) {
+			height = height / (width / window.innerWidth);
+			width = window.innerWidth;
+		}
+		if (height > window.innerHeight) {
+			width = width / (height / window.innerHeight);
+			height = window.innerHeight;
+		}
+
 		image.setAttribute('width', width);
 		image.setAttribute('height', height);
 		return image;
