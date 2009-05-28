@@ -296,13 +296,28 @@ XMLの埋め込み
 ----
 [[PRE:
 [[IMAGE src="*" width="*" height="*"]&#173;]
+[[IMAGE src="*" width="*"]&#173;]
+[[IMAGE src="*" height="*"]&#173;]
+[[IMAGE src="*"]&#173;]
+]]
+[[PRE:
 [[IMG src="*" width="*" height="*"]&#173;]
+[[IMG src="*" width="*"]&#173;]
+[[IMG src="*" height="*"]&#173;]
+[[IMG src="*"]&#173;]
 ]]
 ----
 インライン[[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="160" height="160"]]で
 [[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="160" height="160"]]
 いくつでも
 埋め込める
+----
+[[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="80%" height="50%"]]
+パーセント値を指定すると
+ウィンドウサイズに対する割合として解釈
+[[PRE:
+[[IMG src="*" width="80%" height="50%"]&#173;]
+]]
 ----
 リンクや
 画像のパスの
@@ -1669,11 +1684,11 @@ var Presentation = {
 		var height = info.height;
 
 		if (aWidth != -1 && aWidth.indexOf('%') > 0) {
-			aWidth = width * Number(aWidth.replace('%', '')) * 0.01;
+			aWidth = this.canvas.boxObject.width * Number(aWidth.replace('%', '')) * 0.01;
 			aWidth = aWidth.toString();
 		}
 		if (aHeight != -1 && aHeight.indexOf('%') > 0) {
-			aHeight = height * Number(aHeight.replace('%', '')) * 0.01;
+			aHeight = this.canvas.boxObject.height * Number(aHeight.replace('%', '')) * 0.01;
 			aHeight = aHeight.toString();
 		}
 
@@ -1691,8 +1706,8 @@ var Presentation = {
 		}
 
 		// fit to window
-		var maxW = window.innerWidth - 20;
-		var maxH = window.innerHeight - 20;
+		var maxW = this.canvas.boxObject.width;
+		var maxH = this.canvas.boxObject.height;
 		if (width > maxW) {
 			height = height / (width / maxW);
 			width = maxW;
