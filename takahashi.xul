@@ -2129,7 +2129,8 @@ var Presentation = {
 		if (aURI in this.images) return;
 
 		if (aURI.indexOf('http://') < 0 &&
-			aURI.indexOf('https://') < 0)
+			aURI.indexOf('https://') < 0 &&
+			aURI.indexOf('data:') < 0)
 			aURI = this.dataFolder+aURI;
 
 		var info = {
