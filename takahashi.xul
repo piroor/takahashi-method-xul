@@ -760,6 +760,11 @@ tabbox, tabpanels, tabpanel {
 }
 
 
+[hidden-line="true"] {
+	visibility: hidden;
+}
+
+
 
 #canvasToolbar {
 	position: relative;
@@ -1430,16 +1435,24 @@ var Presentation = {
 		var fragment = document.createDocumentFragment();
 
 		var lineBox;
+		var hidden = false;
 		for (var i = 0, max = text.length; i < max; i++)
 		{
-			lineBox = document.createElement('hbox');
-			lineBox.setAttribute('align', 'center');
-			lineBox.setAttribute('pack', this.data[this.offset].align);
-
 			line = text[i];
 			images_width  = 0;
 			images_height = 0;
 			if (!line) line = ' ';
+
+			if (line == '----') {
+				hidden = true;
+				continue;
+			}
+
+			lineBox = document.createElement('hbox');
+			lineBox.setAttribute('align', 'center');
+			lineBox.setAttribute('pack', this.data[this.offset].align);
+			if (hidden)
+				lineBox.setAttribute('hidden-line', true);
 
 			if (inBlock) {
 				if (blockClass == 'raw' &&
@@ -2044,10 +2057,9 @@ var Presentation = {
 			parts = this._splitPageToParts(source);
 			for (i = 0; i < parts.length; i++)
 			{
-				source = parts.slice(0, i+1).join('') +
-						parts.slice(i+1).join('')
-							.replace(plainTextRegExp, '$1$2$3$4$5')
-							.replace(/(.+)/g, '[[#{visibility:hidden}:$1]]');
+				source = parts.slice(0, i+1).join('');
+				if (i < parts.length-1)
+					source += '----\n'+parts.slice(i+1).join('');
 				data = {
 					load   : dataPath,
 					header : header,
