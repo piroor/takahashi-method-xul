@@ -1906,7 +1906,7 @@ var Presentation = {
 		var imagesRegExp2 = this.makePhraseRegExp('%O%Oima?ge?\\s+src="([^"]+)"', 'i');
 		var image_src;
 
-		var plainTextRegExp = this.makePhraseRegExp('(%O%O\#[^:]+:(.+)%C%C|%O%OEM:(.+)(:EM)?%C%C|%O%OPRE:(.+)(:PRE)?%C%C|%O%Oima?ge? +src="[^"]*"[^%C]+%C%C|%O%O([^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
+		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
 
 		var hiddenRegExp = /^(HIDDEN|IGNORE)::(true|yes|1)\n?/im;
 		var styleRegExp = /^(STYLE|CSS)::(true|yes|1)/im;
@@ -2045,7 +2045,10 @@ var Presentation = {
 			parts = this._splitPageToParts(source);
 			for (i = 0; i < parts.length; i++)
 			{
-				source = parts.slice(0, i+1).join('');
+				source = parts.slice(0, i+1).join('') +
+						parts.slice(i+1).join('')
+							.replace(plainTextRegExp, '$1$2$3$4$5')
+							.replace(/(.+)/g, '[[#{visibility:hidden}:$1]]');
 				data = {
 					load   : dataPath,
 					header : header,
@@ -2054,9 +2057,8 @@ var Presentation = {
 					align  : align || alignGlobal,
 					size   : size || sizeGlobal
 				};
-				data.plain = data.text
-								.join('\n')
-								.replace(plainTextRegExp, '$2$3$5$7$9')
+				data.plain = parts.slice(0, i+1).join('')
+								.replace(plainTextRegExp, '$1$2$3$4$5')
 								.split('\n');
 				if (title !== void(0))
 					data.title = title;
@@ -3601,3 +3603,4 @@ var importNodeTreeWithDelayTimers = 0;
  
 ]]></script> 
   
+</page>
