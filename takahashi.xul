@@ -1873,7 +1873,7 @@ var Presentation = {
 		range.selectNodeContents(this.list);
 		range.deleteContents();
 
-		var sources = this._splitDataToPages(aSources);
+		var sources = this._splitDataToPages(aSources.replace(/(\r\n|[\r\n])/g, '\n'));
 		var source;
 		var data;
 
@@ -1931,9 +1931,7 @@ var Presentation = {
 			size     = null;
 			dataPath  = '';
 
-			source = source
-				.replace(regexp[0], '')
-				.replace(regexp[1], '\n');
+			source = source.replace(/^\s+|\s+$/g, '');
 
 			this.sourceData.push(source);
 
@@ -2041,6 +2039,7 @@ var Presentation = {
 					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
 			}
 
+			source = source.replace(/^\s+|\s+$/g, '');
 
 			parts = this._splitPageToParts(source);
 			for (i = 0; i < parts.length; i++)
