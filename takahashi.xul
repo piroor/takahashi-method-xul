@@ -2917,7 +2917,7 @@ var Presentation = {
 	checkShowHideToolbar : function(aEvent) { 
 		if (!this.scroller || this.scroller.dragging || this.preventToShowHideToolbar) return;
 
-		this.onToolbarArea = (aEvent.clientY < this.toolbarHeight);
+		this.onToolbarArea = aEvent.clientY < (this.toolbarHeight * 1.5);
 
 		if (this.isToolbarHidden == this.onToolbarArea) {
 			if (this.toolbarTimer) window.clearTimeout(this.toolbarTimer);
