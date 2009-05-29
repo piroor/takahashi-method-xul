@@ -85,6 +85,12 @@ ALIGN::right
 ここですよここ！」
 ができる
 ----
+こんな
+---
+ことも
+---
+できる
+----
 HEADER::
 CHAPTER::編集機能
 編集
@@ -1848,8 +1854,7 @@ var Presentation = {
 				this.source.value += codes.childNodes[i].nodeValue;
 			}
 
-			this._data = this.source.value.split(/----+/);
-			this.initData();
+			this._initData(this.source.value);
 		}
 		if (codes)
 			codes.parentNode.removeChild(codes);
@@ -1857,21 +1862,23 @@ var Presentation = {
 		return this._data;
 	},
 	set data(aValue){
-		this._data = aValue.split(/----+/);
-		this.initData();
+		this._initData(aValue);
 		return this._data;
 	},
 	
-	initData : function() 
+	_initData : function(aSources) 
 	{
 		var range = document.createRange();
 
 		range.selectNodeContents(this.list);
 		range.deleteContents();
 
+		var sources = this._splitDataToPages(aSources);
+		var source;
+		var data;
 
+		this._data = [];
 		this.sourceData = [];
-
 
 		var regexp = [
 				/^[\r\n\s]+|[\r\n\s]+$/g,
@@ -1909,32 +1916,34 @@ var Presentation = {
 		var timerRegExp = /^SET-TIMER::(\d+)(.*)\n?/im;
 
 		var dataObj;
-		var i, j,
-			max = this._data.length;
 		var menuContents = document.createDocumentFragment();
 		var popup;
 
 		var dataPath;
-		for (i = 0; i < max; i++)
+		var parts;
+		var i;
+		while (sources.length)
 		{
+			source = sources.shift();
+
 			image_src = null;
 			align     = null;
 			size     = null;
 			dataPath  = '';
 
-			this._data[i] = this._data[i]
+			source = source
 				.replace(regexp[0], '')
 				.replace(regexp[1], '\n');
 
-			this.sourceData[i] = this._data[i];
+			this.sourceData.push(source);
 
-			if (loadRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(loadRegExp, '');
+			if (loadRegExp.test(source)) {
+				source = source.replace(loadRegExp, '');
 				dataPath = RegExp.$1;
 			}
 
-			if (timerRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(timerRegExp, '');
+			if (timerRegExp.test(source)) {
+				source = source.replace(timerRegExp, '');
 				window.setTimeout(function(aSelf, aTime, aUnit) {
 					if (!aSelf.timerTimer) {
 						switch(aUnit)
@@ -1961,55 +1970,49 @@ var Presentation = {
 				}, 100, this, parseInt(RegExp.$1), (RegExp.$2 || '').toLowerCase());
 			}
 
-			if (styleRegExp.test(this._data[i])) {
+			if (styleRegExp.test(source)) {
 				document.insertBefore(
 					document.createProcessingInstruction(
 						'xml-stylesheet',
 						'href="data:text/css,'+
-							escape(this._data[i].replace(styleRegExp, ''))+
+							escape(source.replace(styleRegExp, ''))+
 							'" type="text/css"'
 					),
 					document.documentElement
 				);
-				this._data.splice(i, 1);
-				max--;
-				i--;
 				continue;
 			}
 
-			if (hiddenRegExp.test(this._data[i])) {
-				this._data.splice(i, 1);
-				max--;
-				i--;
+			if (hiddenRegExp.test(source)) {
 				continue;
 			}
 
-			while (titleRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(titleRegExp, '');
+			while (titleRegExp.test(source)) {
+				source = source.replace(titleRegExp, '');
 				if (String(RegExp.$1).toUpperCase() == 'TITLE::')
 					title = RegExp.$2 || '' ;
 			}
 
-			while (headerRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(headerRegExp, '');
+			while (headerRegExp.test(source)) {
+				source = source.replace(headerRegExp, '');
 				if (String(RegExp.$1).toUpperCase() == 'HEADER::')
 					header = RegExp.$2 || '' ;
 			}
 
-			while (footerRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(footerRegExp, '');
+			while (footerRegExp.test(source)) {
+				source = source.replace(footerRegExp, '');
 				if (String(RegExp.$1).toUpperCase() == 'FOOTER::')
 					footer = RegExp.$2 || '' ;
 			}
 
-			while (chapterRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(chapterRegExp, '');
+			while (chapterRegExp.test(source)) {
+				source = source.replace(chapterRegExp, '');
 				if (String(RegExp.$1).toUpperCase() == 'CHAPTER::')
 					chapter = RegExp.$2 || '' ;
 			}
 
-			while (alignRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(alignRegExp, '');
+			while (alignRegExp.test(source)) {
+				source = source.replace(alignRegExp, '');
 
 				align = (RegExp.$3 || '').toLowerCase();
 				if (align == 'left')
@@ -2023,8 +2026,8 @@ var Presentation = {
 				}
 			}
 
-			while (sizeRegExp.test(this._data[i])) {
-				this._data[i] = this._data[i].replace(sizeRegExp, '');
+			while (sizeRegExp.test(source)) {
+				source = source.replace(sizeRegExp, '');
 				size = Math.max(0, Number(RegExp.$3 || this.baseSize));
 				if (String(RegExp.$1).toUpperCase() == 'GLOBAL-SIZE::') {
 					sizeGlobal = size;
@@ -2032,50 +2035,58 @@ var Presentation = {
 				}
 			}
 
-			imageMatchResults = this._data[i].match(imagesRegExp);
+			imageMatchResults = source.match(imagesRegExp);
 			if (imageMatchResults) {
 				for (j = imageMatchResults.length-1; j > -1; j--)
 					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
 			}
 
-			this._data[i] = {
-				load   : dataPath,
-				header : header,
-				footer : footer,
-				text   : this._data[i].split('\n'),
-				align  : align || alignGlobal,
-				size   : size || sizeGlobal
-			};
-			this._data[i].plain = this._data[i].text
-							.join('\n')
-							.replace(plainTextRegExp, '$2$3$5$7$9')
-							.split('\n');
-			if (title !== void(0))
-				this._data[i].title = title;
 
-			this._data[i].chapter = chapter || title || '';
-			if (lastChapter === void(0) ||
-				lastChapter != this._data[i].chapter) {
-				lastChapter = this._data[i].chapter;
+			parts = this._splitPageToParts(source);
+			for (i = 0; i < parts.length; i++)
+			{
+				source = parts.slice(0, i+1).join('');
+				data = {
+					load   : dataPath,
+					header : header,
+					footer : footer,
+					text   : source.split('\n'),
+					align  : align || alignGlobal,
+					size   : size || sizeGlobal
+				};
+				data.plain = data.text
+								.join('\n')
+								.replace(plainTextRegExp, '$2$3$5$7$9')
+								.split('\n');
+				if (title !== void(0))
+					data.title = title;
 
-				if (popup && popup.childNodes.length == 1) {
-					menuContents.removeChild(menuContents.lastChild);
-					menuContents.appendChild(popup.removeChild(popup.lastChild));
+				data.chapter = chapter || title || '';
+				if (lastChapter === void(0) ||
+					lastChapter != data.chapter) {
+					lastChapter = data.chapter;
+
+					if (popup && popup.childNodes.length == 1) {
+						menuContents.removeChild(menuContents.lastChild);
+						menuContents.appendChild(popup.removeChild(popup.lastChild));
+					}
+
+					popup = document.createElement('menupopup');
+					menuContents.appendChild(document.createElement('menu'));
+					menuContents.lastChild.setAttribute('label', data.chapter);
+					menuContents.lastChild.appendChild(popup);
 				}
 
-				popup = document.createElement('menupopup');
-				menuContents.appendChild(document.createElement('menu'));
-				menuContents.lastChild.setAttribute('label', this._data[i].chapter);
-				menuContents.lastChild.appendChild(popup);
-			}
+				popup.appendChild(document.createElement('menuitem'));
+				popup.lastChild.setAttribute('type', 'radio');
+				popup.lastChild.setAttribute('radiogroup', 'pages');
+				popup.lastChild.setAttribute('label', (this._data.length+1)+': '+(
+					(data.plain.join('') || data.text.join(' ')).replace(/\s+/g, ' ')
+				));
+				popup.lastChild.setAttribute('value', this._data.length);
 
-			popup.appendChild(document.createElement('menuitem'));
-			popup.lastChild.setAttribute('type', 'radio');
-			popup.lastChild.setAttribute('radiogroup', 'pages');
-			popup.lastChild.setAttribute('label', (i+1)+': '+(
-				(this._data[i].plain.join('') || this._data[i].text.join(' ')).replace(/\s+/g, ' ')
-			));
-			popup.lastChild.setAttribute('value', i);
+				this._data.push(data);
+			}
 		}
 
 		if (menuContents.childNodes.length == 1) {
@@ -2088,6 +2099,18 @@ var Presentation = {
 
 
 		this.shownMontaLabels = [];
+	},
+	_splitDataToPages : function(aSources)
+	{
+		return aSources.split(/^----+$/m);
+	},
+	_splitPageToParts : function(aPageSource)
+	{
+		return aPageSource
+				.split(/^---$/m)
+				.map(function(aPart) {
+					return aPart.replace(/^\n/, '');
+				});
 	},
   
 	get dataPath(){ 
@@ -3577,6 +3600,4 @@ function importNodeTreeWithDelay(aNode, aParent, aDefaultNS, aFromTimeout)
 var importNodeTreeWithDelayTimers = 0;
  
 ]]></script> 
-  
-</page> 
   
