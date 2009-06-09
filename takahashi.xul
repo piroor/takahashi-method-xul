@@ -1362,12 +1362,37 @@ var Presentation = {
 
 		this.list.getElementsByAttribute('value', this.offset)[0].setAttribute('checked', true);
 
+		if (!content.isComplete ||
+			typeof content.isComplete != 'function' ||
+			content.isComplete()) {
+			this.finishTakahashi();
+		}
+		else {
+			var waitingTimer = window.setInterval(function(aSelf) {
+					if (!content.isComplete()) return;
+					window.clearInterval(waitingTimer);
+					aSelf.finishTakahashi();
+				}, 100, this);
+		}
+	},
+	finishTakahashi : function()
+	{
 		this.canvas.removeAttribute('rendering');
 		this.isRendering = false;
 		this.setHash('page', 'page'+(this.offset+1));
 
-		this.next.value = (this.offset <= this.data.length-2) ? (this.data[this.offset+1].plain.join('') || this.data[this.offset+1].text.join('')).replace(/\s+/g, ' ') : '(no page)' ;
-		this.remainder.setAttribute('value', this.offset == 0 ? 0 : parseInt(((this.offset)/(this.data.length-1))*100));
+		this.next.value = (this.offset <= this.data.length-2) ?
+				(
+					this.data[this.offset+1].plain.join('') ||
+					this.data[this.offset+1].text.join('')
+				).replace(/\s+/g, ' ') :
+				'(no page)' ;
+		this.remainder.setAttribute(
+			'value',
+			this.offset == 0 ?
+				0 :
+				parseInt(((this.offset)/(this.data.length-1))*100)
+		);
 
 		var event = document.createEvent('Events');
 		event.initEvent('PresentationRedraw', false, true);
@@ -1438,6 +1463,8 @@ var Presentation = {
 
 		var lineBox;
 		var hidden = false;
+		var loadedFlag;
+		var loadedFlags = [];
 		for (var i = 0, max = text.length; i < max; i++)
 		{
 			line = text[i];
@@ -1464,7 +1491,9 @@ var Presentation = {
 					line = line.substring((RegExp.$1+RegExp.$2).length);
 
 					eval('var xml = <hbox class="raw" style="blockStyle" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+blockContents.join('\n')+'</hbox>;');
-					importNodeTreeWithDelay(importE4XNode(xml, document, XULNS), lineBox, XULNS);
+					loadedFlag = { value : false };
+					loadedFlags.push(loadedFlag);
+					importNodeTreeWithDelay(importE4XNode(xml, document, XULNS), lineBox, XULNS, loadedFlag);
 
 					blockClass    = '';
 					blockStyle    = '';
@@ -1577,7 +1606,9 @@ var Presentation = {
 				// Raw Codes: Parsed as XML
 				if (rawRegExp.test(line)) {
 					eval('var xml = <hbox class="raw" style="'+RegExp.$4+'" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+RegExp.$5+'</hbox>;');
-					importNodeTreeWithDelay(importE4XNode(xml, document, XULNS), lineBox, XULNS);
+					loadedFlag = { value : false };
+					loadedFlags.push(loadedFlag);
+					importNodeTreeWithDelay(importE4XNode(xml, document, XULNS), lineBox, XULNS, loadedFlag);
 				}
 				else if (rawStartRegExp.test(line)) {
 					inBlock       = true;
@@ -1708,6 +1739,12 @@ var Presentation = {
 		}
 
 		retVal.fragment = fragment;
+		retVal.isComplete = function() {
+			return !loadedFlags.length ||
+				loadedFlags.every(function(aFlag) {
+					return aFlag.value;
+				});
+		};
 		return retVal;
 	},
 	createImage : function(aURI, aWidth, aHeight)
@@ -2635,11 +2672,22 @@ var Presentation = {
   
 /* state */ 
 	
+	get isRendering()
+	{
+		return this._isRendering;
+	},
+	set isRendering(aValue)
+	{
+		this._isRendering = aValue;
+		return aValue;
+	},
+	_isRendering : false,
+ 
 	get canMove() 
 	{
 		return (
 				this.isRendering ||
-				importNodeTreeWithDelayTimers ||
+				importingTimersCount ||
 				this.montaAnimating
 			) ? false : true ;
 	},
@@ -3577,11 +3625,10 @@ function setE4XContent( e4x, node, aDefaultNS )
 // importE4XNodeで得たノードツリーを埋め込むと、XULでバインディングが適用されないことがある。
 // 遅延処理でこの問題を一部避けることができる（が、これでもまだダメな場合がある。menuとか。）
 // とりあえずXULとSVGとXHTMLはいけた。MathMLはダメだった。
-function importNodeTreeWithDelay(aNode, aParent, aDefaultNS, aFromTimeout)
+function importNodeTreeWithDelay(aNode, aParent, aDefaultNS, aComplete, aDelayed)
 {
-	if (aFromTimeout) {
-		importNodeTreeWithDelayTimers--;
-	}
+	if (!aComplete) aComplete = {};
+	if (!('timersCount' in aComplete)) aComplete.timersCount = 0;
 
 	var node;
 	var delay = 1;
@@ -3601,31 +3648,41 @@ function importNodeTreeWithDelay(aNode, aParent, aDefaultNS, aFromTimeout)
 			var children = aNode.childNodes;
 			for (var i = 0, maxi = children.length; i < maxi; i++)
 				if (delay) {
-					importNodeTreeWithDelayTimers++;
-					window.setTimeout(importNodeTreeWithDelay, delay, children[i], node, aDefaultNS, true);
+					importingTimersCount++;
+					aComplete.timersCount++;
+					window.setTimeout(importNodeTreeWithDelay, delay, children[i], node, aDefaultNS, aComplete, true);
 				}
 				else
-					importNodeTreeWithDelay(children[i], node, aDefaultNS);
+					importNodeTreeWithDelay(children[i], node, aDefaultNS, aComplete);
 			break;
 
 		default:
 			if (
-				aNode.nodeType == Node.TEXT_NODE &&
-				/^\s*$/.test(aNode.nodeValue) &&
-				(aNode.parentNode.namespaceURI || aDefaultNS) != XHTMLNS
-				)
-				return;
-			node = aParent.appendChild(aNode.cloneNode(true));
+				aNode.nodeType != Node.TEXT_NODE ||
+				!/^\s*$/.test(aNode.nodeValue) ||
+				(aNode.parentNode.namespaceURI || aDefaultNS) == XHTMLNS
+				) {
+				node = aParent.appendChild(aNode.cloneNode(true));
+			}
 			break;
 	}
 
-	var event = document.createEvent('Events');
-	event.initEvent('CanvasContentAdded', true, true);
-	node.dispatchEvent(event);
+	if (aDelayed) {
+		importingTimersCount--;
+		aComplete.timersCount--;
+	}
+
+	if (node) {
+		var event = document.createEvent('Events');
+		event.initEvent('CanvasContentAdded', true, true);
+		node.dispatchEvent(event);
+	}
+
+	if (!aComplete.timersCount) aComplete.value = true;
 
 	return node;
 }
-var importNodeTreeWithDelayTimers = 0;
+var importingTimersCount = 0;
  
 ]]></script> 
   
