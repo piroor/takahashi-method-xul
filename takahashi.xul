@@ -659,8 +659,8 @@ progressmeter .progress-remainder {
 	display: none;
 }
 
-#canvas[rendering="true"] *,
-#canvas[rendering="true"] .text-link {
+#canvas[rendering="true"] #canvasMain *,
+#canvas[rendering="true"] #canvasMain .text-link {
 	color: inherit !important;
 }
 
@@ -1379,6 +1379,7 @@ var Presentation = {
 	{
 		this.canvas.removeAttribute('rendering');
 		this.isRendering = false;
+
 		this.setHash('page', 'page'+(this.offset+1));
 
 		this.next.value = (this.offset <= this.data.length-2) ?
@@ -1394,12 +1395,12 @@ var Presentation = {
 				parseInt(((this.offset)/(this.data.length-1))*100)
 		);
 
+		this.lastWidth = window.innerWidth;
+		this.lastHeight = window.innerHeight;
+
 		var event = document.createEvent('Events');
 		event.initEvent('PresentationRedraw', false, true);
 		this.canvas.dispatchEvent(event);
-
-		this.lastWidth = window.innerWidth;
-		this.lastHeight = window.innerHeight;
 	},
 	clearContent : function()
 	{
@@ -2672,17 +2673,6 @@ var Presentation = {
   
 /* state */ 
 	
-	get isRendering()
-	{
-		return this._isRendering;
-	},
-	set isRendering(aValue)
-	{
-		this._isRendering = aValue;
-		return aValue;
-	},
-	_isRendering : false,
- 
 	get canMove() 
 	{
 		return (
@@ -2745,7 +2735,7 @@ var Presentation = {
 						aSelf.lastHeight != window.innerHeight
 						) {
 						aSelf.cachedContents = [];
-						aSelf.takahashi(); // redrwa
+						aSelf.takahashi(); // redraw
 					}
 				}, 250, this);
 				break;
@@ -2800,7 +2790,9 @@ var Presentation = {
 					window.clearTimeout(this.fitToCanvasTimer);
 					this.fitToCanvasTimer = null;
 				}
-				this.fitToCanvasTimer = window.setTimeout('Presentation.fitMainContentToCanvas()', 100);
+				this.fitToCanvasTimer = window.setTimeout(function(aSelf) {
+						aSelf.fitMainContentToCanvas();
+					}, 100, this);
 				break;
 
 			case 'DOMMouseScroll':
@@ -3678,7 +3670,11 @@ function importNodeTreeWithDelay(aNode, aParent, aDefaultNS, aComplete, aDelayed
 		node.dispatchEvent(event);
 	}
 
-	if (!aComplete.timersCount) aComplete.value = true;
+	if (!aComplete.timersCount) {
+		window.setTimeout(function() {
+			aComplete.value = true;
+		}, 100);
+	}
 
 	return node;
 }
