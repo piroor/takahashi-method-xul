@@ -296,7 +296,8 @@ XMLの埋め込み
 ラベル無しリンクも可能↓
 [[http://piro.sakura.ne.jp/]]
 ----
-[[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="320" height="320"]]
+ALIAS::sample=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==
+[[image src="sample" width="320" height="320"]]
 ----
 画像
 ----
@@ -313,12 +314,12 @@ XMLの埋め込み
 [[IMG src="*"]&#173;]
 ]]
 ----
-インライン[[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="160" height="160"]]で
-[[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="160" height="160"]]
+インライン[[image src="sample" width="160" height="160"]]で
+[[image src="sample" width="160" height="160"]]
 いくつでも
 埋め込める
 ----
-[[image src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEUiLki0cTXTFD3gdAD/SG/5pBDin2H/2AD/zJ7/5sn///96+196AAAAC3RSTlP/////////////AEpPAfIAAAAJcEhZcwAALiMAAC4jAXilP3YAAACbSURBVHicAZAAb/8EoXmL0t7lcAAEAPmyICIAiXcEACIeAN783mcEAiIC/iL+wAAEAiAAAgACQMIEsgAAIAAAAgIE4AAg/gIAIuIE/gAu8AD+AEAEAB7+4/8cAgAEbraFMEv0vkAEB+ABUIAvIP4EAGtlEQFO0sAEANSQAPsAIN4EAPvwEJXq/nAE/cDzYw/iDgUEk3cAvADSAzexmTK+nmQO2wAAAABJRU5ErkJggg==" width="80%" height="50%"]]
+[[image src="sample" width="80%" height="50%"]]
 パーセント値を指定すると
 ウィンドウサイズに対する割合として解釈
 [[PRE:
@@ -1180,6 +1181,7 @@ var Presentation = {
 
 	cachedContents : [],
 	sourceData     : [],
+	_alias         : {},
  
 	init : function(option){ 
 		if (this.initialized) {
@@ -1636,10 +1638,6 @@ var Presentation = {
 				// Images
 				else if (imagesRegExp.test(line)) {
 					image_src = RegExp.$2;
-					if (image_src.indexOf('http://') < 0 &&
-						image_src.indexOf('https://') < 0 &&
-						image_src.indexOf('data:') < 0)
-						image_src = this.dataFolder+image_src;
 					image_width = -1;
 					image_height = -1;
 					if (RegExp.$3) {
@@ -1663,9 +1661,7 @@ var Presentation = {
 
 				// Links
 				else if (linksRegExp.test(line)) {
-					uri = RegExp.$4;
-					if (uri.indexOf('://') < 0)
-						uri = this.dataFolder+uri;
+					uri = this.resolve(RegExp.$4);
 					lineBox.appendChild(document.createElement('description'));
 					lineBox.lastChild.setAttribute('value', RegExp.$3 || RegExp.$4);
 					lineBox.lastChild.setAttribute('href', uri);
@@ -1716,6 +1712,8 @@ var Presentation = {
 	},
 	createImage : function(aURI, aWidth, aHeight)
 	{
+		aURI = this.resolve(aURI);
+
 		var image = document.createElement('image')
 		image.setAttribute('src', aURI);
 
@@ -1892,6 +1890,7 @@ var Presentation = {
 
 		this._data = [];
 		this.sourceData = [];
+		this._alias = {};
 
 		var regexp = [
 				/^[\r\n\s]+|[\r\n\s]+$/g,
@@ -1921,8 +1920,10 @@ var Presentation = {
 
 		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
 
-		var hiddenRegExp = /^(HIDDEN|IGNORE)::(true|yes|1)\n?/im;
-		var styleRegExp = /^(STYLE|CSS)::(true|yes|1)/im;
+		var hiddenRegExp = /^(?:HIDDEN|IGNORE)::(?:true|yes|1)\n?/im;
+		var styleRegExp = /^(?:STYLE|CSS)::(?:true|yes|1)/im;
+
+		var aliasRegExp = /^(?:DEFINE-)?ALIAS::([^=]+)=(.+)\n?/gim;
 
 
 		var loadRegExp  = /^LOAD::(.+)\n?/im;
@@ -2046,6 +2047,12 @@ var Presentation = {
 				}
 			}
 
+			(source.match(aliasRegExp) || []).forEach(function(aLine) {
+				aliasRegExp.test(aLine);
+				this._alias[RegExp.$1] = RegExp.$2;
+			}, this);
+			source = source.replace(aliasRegExp, '');
+
 			imageMatchResults = source.match(imagesRegExp);
 			if (imageMatchResults) {
 				for (j = imageMatchResults.length-1; j > -1; j--)
@@ -2125,6 +2132,18 @@ var Presentation = {
 					return aPart.replace(/^\n/, '');
 				});
 	},
+	resolve : function(aURI)
+	{
+		if (aURI && aURI in this._alias)
+			aURI = this._alias[aURI];
+
+		if (aURI.indexOf('://') < 0 &&
+			aURI.indexOf('about:') < 0 &&
+			aURI.indexOf('data:') < 0)
+			aURI = this.dataFolder+aURI;
+
+		return aURI;
+	},
   
 	get dataPath(){ 
 		if (!this._dataPath)
@@ -2198,12 +2217,8 @@ var Presentation = {
  
 	registerImage : function(aURI) 
 	{
+		aURI = this.resolve(aURI);
 		if (aURI in this.images) return;
-
-		if (aURI.indexOf('http://') < 0 &&
-			aURI.indexOf('https://') < 0 &&
-			aURI.indexOf('data:') < 0)
-			aURI = this.dataFolder+aURI;
 
 		var info = {
 			width  : -1,
