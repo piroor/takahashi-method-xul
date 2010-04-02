@@ -479,10 +479,11 @@ Life !!
 		"HGS創英角ｺﾞｼｯｸUB",
 		"HG創英角ｺﾞｼｯｸUB",
 		"HGSoeiKakugothicUB",
-		"小塚ゴシック Std H",
+		"小塚ゴシック Pro H",
 		"モトヤゴシック 6",
 		"ヒラギノ角ゴ Std W8",
 		sans-serif !important;
+	font-weight: 900;
 }
 
 .em-text {
@@ -602,7 +603,6 @@ progressmeter .progress-remainder {
 		"HGHeiseiMinchotaiW9"
 		"ヒラギノ明朝 Pro W6"
 		serif !important;
-	font-weight: 900;
 }
 #canvas[eva="true"] .em-text {
 	color: green !important;
