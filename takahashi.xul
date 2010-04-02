@@ -454,34 +454,34 @@ Life !!
 	background: white !important;
 	color: black !important;
 	font-family:
-		"ゴシックMB101U"
-		"ニューセザンヌ-EB"
-		"セザンヌ-EB"
-		"ＤＨＰ極太ゴシック体"
-		"ＤＦＰ極太ゴシック体"
-		"DHPGothic UB"
-		"DFPGothic UB"
-		"ＤＨＰ特太ゴシック体"
-		"ＤＦＰ特太ゴシック体"
-		"DHPGothic EB"
-		"DFPGothic EB"
-		"セイビイサラゴUB-P"
-		"AR Pゴシック体 S"
-		"Arphic PGothic SuperBold JIS"
-/*		"Arial Black"*/
-		"ＤＦ特太ゴシック体"
-		"DFGothic EB"
-		"セイビイサラゴUB"
-		"AR ゴシック体 S"
-		"Arphic Gothic SuperBold JIS"
-		"HGP創英角ｺﾞｼｯｸUB"
-		"HGPSoeiKakugothicUB"
-		"HGS創英角ｺﾞｼｯｸUB"
-		"HG創英角ｺﾞｼｯｸUB"
-		"HGSoeiKakugothicUB"
-		"小塚ゴシック Std H"
-		"モトヤゴシック 6"
-		"ヒラギノ角ゴ Std W8"
+		"ゴシックMB101U",
+		"ニューセザンヌ-EB",
+		"セザンヌ-EB",
+		"ＤＨＰ極太ゴシック体",
+		"ＤＦＰ極太ゴシック体",
+		"DHPGothic UB",
+		"DFPGothic UB",
+		"ＤＨＰ特太ゴシック体",
+		"ＤＦＰ特太ゴシック体",
+		"DHPGothic EB",
+		"DFPGothic EB",
+		"セイビイサラゴUB-P",
+		"AR Pゴシック体 S",
+		"Arphic PGothic SuperBold JIS",
+/*		"Arial Black",*/
+		"ＤＦ特太ゴシック体",
+		"DFGothic EB",
+		"セイビイサラゴUB",
+		"AR ゴシック体 S",
+		"Arphic Gothic SuperBold JIS",
+		"HGP創英角ｺﾞｼｯｸUB",
+		"HGPSoeiKakugothicUB",
+		"HGS創英角ｺﾞｼｯｸUB",
+		"HG創英角ｺﾞｼｯｸUB",
+		"HGSoeiKakugothicUB",
+		"小塚ゴシック Std H",
+		"モトヤゴシック 6",
+		"ヒラギノ角ゴ Std W8",
 		sans-serif !important;
 }
 
