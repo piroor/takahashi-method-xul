@@ -602,6 +602,7 @@ progressmeter .progress-remainder {
 		"HGHeiseiMinchotaiW9"
 		"ヒラギノ明朝 Pro W6"
 		serif !important;
+	font-weight: 900;
 }
 #canvas[eva="true"] .em-text {
 	color: green !important;
