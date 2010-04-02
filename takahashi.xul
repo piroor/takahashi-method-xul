@@ -47,7 +47,7 @@
 	onkeypress="Presentation.onKeyPress(event);">
 	 
 <!-- Built-in Content --> 
-<html:textarea id="builtinCode" style="visibility: collapse">
+<html:textarea id="builtinCode" style="visibility: collapse"><![CDATA[
 TITLE::高橋メソッドなプレゼンツール in XUL リターンズ
 GLOBAL-SIZE::9
 高橋メソッド
@@ -106,165 +106,165 @@ HEADER::機能
 テキストを部分的に
 [[EM:強調]]できる
 [[PRE:
-[[EM:強調テキスト]&#173;]
-[[EM:強調テキスト:EM]&#173;]
+[[EM:強調テキスト]­]
+[[EM:強調テキスト:EM]­]
 ]]
 ----
 整形済み
 テキスト
 [[PRE:
-[[PRE:整形済み]&#173;]
-[[PRE:整形済み:PRE]&#173;]
+[[PRE:整形済み]­]
+[[PRE:整形済み:PRE]­]
 ]]
 ----
 行内に[[PRE:preformatted text]]を
 書ける（けどあんまり意味ない）
 ----
 複数行にまたがる整形済みテキスト
-[[PRE:&lt;html&gt;
-  &lt;head&gt;
-    &lt;title&gt;サンプル&lt;/title&gt;
-  &lt;/head&gt;
-  &lt;body&gt;
-    &lt;p&gt;サンプル&lt;/p&gt;
-  &lt;/body&gt;
-&lt;/html&gt;:PRE]]
+[[PRE:<html>
+  <head>
+    <title>サンプル</title>
+  </head>
+  <body>
+    <p>サンプル</p>
+  </body>
+</html>:PRE]]
 ソースコードの例示などに使える
 ----
 表
-|~見出し&lt;br/&gt;セル|セル1|セル2
-|~見出し&lt;br/&gt;セル|セル3|セル4
+|~見出し<br/>セル|セル1|セル2
+|~見出し<br/>セル|セル3|セル4
 データの例示などにどうぞ。
 [[PRE:
-|~見出し&lt;br/&gt;セル|セル1|セル2
-|~見出し&lt;br/&gt;セル|セル3|セル4
+|~見出し<br/>セル|セル1|セル2
+|~見出し<br/>セル|セル3|セル4
 ]]
 ----
 SIZE::50
 XUL
 [[RAW:
-&lt;vbox align="center"&gt;
-&lt;button label="ボタン"/&gt;
+<vbox align="center">
+<button label="ボタン"/>
 
-&lt;hbox&gt;
+<hbox>
 
-&lt;menulist label="既定の値" style="width: 10em;"&gt;
-	&lt;menupopup&gt;
-		&lt;menuitem label="既定の値"/&gt;
-		&lt;menuseparator/&gt;
-		&lt;menuitem label="項目1"/&gt;
-		&lt;menuitem label="項目2"/&gt;
-		&lt;menuitem label="項目3"/&gt;
-	&lt;/menupopup&gt;
-&lt;/menulist&gt;
+<menulist label="既定の値" style="width: 10em;">
+	<menupopup>
+		<menuitem label="既定の値"/>
+		<menuseparator/>
+		<menuitem label="項目1"/>
+		<menuitem label="項目2"/>
+		<menuitem label="項目3"/>
+	</menupopup>
+</menulist>
 
-&lt;menulist label="既定の値" style="width: 10em;" editable="true"&gt;
-	&lt;menupopup&gt;
-		&lt;menuitem label="既定の値"/&gt;
-		&lt;menuseparator/&gt;
-		&lt;menuitem label="項目1"/&gt;
-		&lt;menuitem label="項目2"/&gt;
-		&lt;menuitem label="項目3"/&gt;
-	&lt;/menupopup&gt;
-&lt;/menulist&gt;
+<menulist label="既定の値" style="width: 10em;" editable="true">
+	<menupopup>
+		<menuitem label="既定の値"/>
+		<menuseparator/>
+		<menuitem label="項目1"/>
+		<menuitem label="項目2"/>
+		<menuitem label="項目3"/>
+	</menupopup>
+</menulist>
 
-&lt;/hbox&gt;
+</hbox>
 
-&lt;toolbar style="background: ThreeDFace; border: 1px -moz-bg-outset;"&gt;
+<toolbar style="background: ThreeDFace; border: 1px -moz-bg-outset;">
 
-&lt;toolbarbutton label="ボタン"/&gt;
+<toolbarbutton label="ボタン"/>
 
-&lt;toolbarbutton label="ボタン" type="menu"&gt;
-	&lt;menupopup&gt;
-		&lt;menuitem label="項目1"/&gt;
-		&lt;menuitem label="項目2"/&gt;
-		&lt;menuitem label="項目3"/&gt;
-		&lt;menu label="サブメニュー"&gt;
-			&lt;menupopup&gt;
-				&lt;menuitem label="項目1"/&gt;
-				&lt;menuitem label="項目2"/&gt;
-				&lt;menuitem label="項目3"/&gt;
-			&lt;/menupopup&gt;
-		&lt;/menu&gt;
-	&lt;/menupopup&gt;
-&lt;/toolbarbutton&gt;
+<toolbarbutton label="ボタン" type="menu">
+	<menupopup>
+		<menuitem label="項目1"/>
+		<menuitem label="項目2"/>
+		<menuitem label="項目3"/>
+		<menu label="サブメニュー">
+			<menupopup>
+				<menuitem label="項目1"/>
+				<menuitem label="項目2"/>
+				<menuitem label="項目3"/>
+			</menupopup>
+		</menu>
+	</menupopup>
+</toolbarbutton>
 
-&lt;toolbarbutton label="ボタン" type="menu-button"&gt;
-	&lt;menupopup&gt;
-		&lt;menuitem label="項目1"/&gt;
-		&lt;menuitem label="項目2"/&gt;
-		&lt;menuitem label="項目3"/&gt;
-	&lt;/menupopup&gt;
-&lt;/toolbarbutton&gt;
+<toolbarbutton label="ボタン" type="menu-button">
+	<menupopup>
+		<menuitem label="項目1"/>
+		<menuitem label="項目2"/>
+		<menuitem label="項目3"/>
+	</menupopup>
+</toolbarbutton>
 
-&lt;/toolbar&gt;
+</toolbar>
 
-&lt;/vbox&gt;
+</vbox>
 ]]
 ----
 SIZE::50
 SVG
 [[RAW:
-&lt;svg xmlns="http://www.w3.org/2000/svg" xml:space="default" width="220" height="200"&gt;
-        &lt;rect x="60" y="60" width="100" height="80" fill="lime" stroke="red"
-stroke-width="5"/&gt;
-        &lt;rect x="30" y="20" width="80" opacity="0.6" height="100" fill="aqua" stroke="blue"
-stroke-width="5"/&gt;
-&lt;/svg&gt;
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="default" width="220" height="200">
+        <rect x="60" y="60" width="100" height="80" fill="lime" stroke="red"
+stroke-width="5"/>
+        <rect x="30" y="20" width="80" opacity="0.6" height="100" fill="aqua" stroke="blue"
+stroke-width="5"/>
+</svg>
 ]]
 ----
 SIZE::50
 XHTML
 [[RAW:
-&lt;table xmlns="http://www.w3.org/1999/xhtml" border="1"&gt;
-	&lt;tbody&gt;
-		&lt;tr&gt;&lt;th&gt;10進数&lt;/th&gt;&lt;td&gt;0&lt;/td&gt;&lt;td&gt;51&lt;/td&gt;&lt;td&gt;102&lt;/td&gt;&lt;td&gt;153&lt;/td&gt;&lt;td&gt;204&lt;/td&gt;&lt;td&gt;255&lt;/td&gt;&lt;/tr&gt;
-		&lt;tr&gt;&lt;th&gt;16進数&lt;/th&gt;&lt;td&gt;0&lt;/td&gt;&lt;td&gt;33&lt;/td&gt;&lt;td&gt;66&lt;/td&gt;&lt;td&gt;99&lt;/td&gt;&lt;td&gt;CC&lt;/td&gt;&lt;td&gt;FF&lt;/td&gt;&lt;/tr&gt;
-	&lt;/tbody&gt;
-&lt;/table&gt;
+<table xmlns="http://www.w3.org/1999/xhtml" border="1">
+	<tbody>
+		<tr><th>10進数</th><td>0</td><td>51</td><td>102</td><td>153</td><td>204</td><td>255</td></tr>
+		<tr><th>16進数</th><td>0</td><td>33</td><td>66</td><td>99</td><td>CC</td><td>FF</td></tr>
+	</tbody>
+</table>
 ]]
 ----
 HIDDEN::true
 MathML
 [[RAW:
-&lt;math xmlns="http://www.w3.org/1998/Math/MathML"&gt;
-    &lt;mrow&gt;
-      &lt;mrow&gt;
-        &lt;munder&gt;
-          &lt;mo form="prefix" movablelimits="false"&gt;lim&lt;/mo&gt;
-          &lt;mrow&gt;
-            &lt;mi&gt;n&lt;/mi&gt;
-            &lt;mo&gt;→&lt;/mo&gt;
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+    <mrow>
+      <mrow>
+        <munder>
+          <mo form="prefix" movablelimits="false">lim</mo>
+          <mrow>
+            <mi>n</mi>
+            <mo>→</mo>
 
-            &lt;mi&gt;N&lt;/mi&gt;
-          &lt;/mrow&gt;
-        &lt;/munder&gt;
-        &lt;msup&gt;
-          &lt;mrow&gt;
-            &lt;mo&gt;(&lt;/mo&gt;
-            &lt;mrow&gt;
-              &lt;mn&gt;1&lt;/mn&gt;
+            <mi>N</mi>
+          </mrow>
+        </munder>
+        <msup>
+          <mrow>
+            <mo>(</mo>
+            <mrow>
+              <mn>1</mn>
 
-              &lt;mo&gt;+&lt;/mo&gt;
-              &lt;mfrac&gt;
-                &lt;mn&gt;1&lt;/mn&gt;
-                &lt;mi&gt;n&lt;/mi&gt;
-              &lt;/mfrac&gt;
-            &lt;/mrow&gt;
-            &lt;mo&gt;)&lt;/mo&gt;
+              <mo>+</mo>
+              <mfrac>
+                <mn>1</mn>
+                <mi>n</mi>
+              </mfrac>
+            </mrow>
+            <mo>)</mo>
 
-          &lt;/mrow&gt;
-          &lt;mi&gt;n&lt;/mi&gt;
-        &lt;/msup&gt;
-      &lt;/mrow&gt;
-      &lt;mo&gt;?&lt;/mo&gt;
-      &lt;msup&gt;
-        &lt;mi&gt;e&lt;/mi&gt;
+          </mrow>
+          <mi>n</mi>
+        </msup>
+      </mrow>
+      <mo>?</mo>
+      <msup>
+        <mi>e</mi>
 
-        &lt;mi&gt;N&lt;/mi&gt;
-      &lt;/msup&gt;
-    &lt;/mrow&gt;
-&lt;/math&gt;
+        <mi>N</mi>
+      </msup>
+    </mrow>
+</math>
 ]]
 
 ----
@@ -272,24 +272,24 @@ XMLの埋め込み
 なんかもできる
 [[PRE:
 [[raw:
-&lt;toolbar xmlns="http://www.mozilla.org/keymaster
-                    /gatekeeper/there.is.only.xul"&gt;
-    &lt;toolbarbutton type="menu" label="メニュー1"/&gt;
-      &lt;menupopup&gt;
-        &lt;menuitem label="項目1"/&gt;
-        &lt;menuitem label="項目2"/&gt;
-        &lt;menuitem label="項目3"/&gt;
-      &lt;/menupopup&gt;
-    &lt;/toolbarbutton&gt;
-&lt;/toolbar&gt;
-]&#173;]
+<toolbar xmlns="http://www.mozilla.org/keymaster
+                    /gatekeeper/there.is.only.xul">
+    <toolbarbutton type="menu" label="メニュー1"/>
+      <menupopup>
+        <menuitem label="項目1"/>
+        <menuitem label="項目2"/>
+        <menuitem label="項目3"/>
+      </menupopup>
+    </toolbarbutton>
+</toolbar>
+]­]
 ]]
 （でもちょっとバギー）
 ----
 リンク
 [[PRE:
-[[URI]&#173;]
-[[ラベル|URI]&#173;]
+[[URI]­]
+[[ラベル|URI]­]
 ]]
 ----
 [[リンクも埋め込める|http://piro.sakura.ne.jp/]]
@@ -302,16 +302,16 @@ ALIAS::sample=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJS
 画像
 ----
 [[PRE:
-[[IMAGE src="*" width="*" height="*"]&#173;]
-[[IMAGE src="*" width="*"]&#173;]
-[[IMAGE src="*" height="*"]&#173;]
-[[IMAGE src="*"]&#173;]
+[[IMAGE src="*" width="*" height="*"]­]
+[[IMAGE src="*" width="*"]­]
+[[IMAGE src="*" height="*"]­]
+[[IMAGE src="*"]­]
 ]]
 [[PRE:
-[[IMG src="*" width="*" height="*"]&#173;]
-[[IMG src="*" width="*"]&#173;]
-[[IMG src="*" height="*"]&#173;]
-[[IMG src="*"]&#173;]
+[[IMG src="*" width="*" height="*"]­]
+[[IMG src="*" width="*"]­]
+[[IMG src="*" height="*"]­]
+[[IMG src="*"]­]
 ]]
 ----
 インライン[[image src="sample" width="160" height="160"]]で
@@ -323,7 +323,7 @@ ALIAS::sample=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJS
 パーセント値を指定すると
 ウィンドウサイズに対する割合として解釈
 [[PRE:
-[[IMG src="*" width="80%" height="50%"]&#173;]
+[[IMG src="*" width="80%" height="50%"]­]
 ]]
 ----
 リンクや
@@ -343,13 +343,13 @@ ALIAS::sample=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJS
 自分だけのカスタム
 指定も可能
 [[PRE:
-[[#クラス名:文字列]&#173;]
+[[#クラス名:文字列]­]
 ]]
 このように↓解釈
 [[PRE:
-&lt;description
+<description
   class="クラス名"
-  value="文字列"/&gt;
+  value="文字列"/>
 ]]
 ----
 複数行にまたがる
@@ -358,14 +358,14 @@ ALIAS::sample=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJS
 [[#クラス名:
 1行目
 2行目
-]&#173;]
+]­]
 ]]
 このように↓解釈
 [[PRE:
-&lt;vbox class="クラス名 block"&gt;
-  &lt;description value="1行目"/&gt;
-  &lt;description value="2行目"/&gt;
-&lt;/vbox&gt;
+<vbox class="クラス名 block">
+  <description value="1行目"/>
+  <description value="2行目"/>
+</vbox>
 ]]
 ----
 スタイルシートで
@@ -382,8 +382,8 @@ FOOTER::フッタ
 ヘッダとフッタも
 自由に指定できる
 [[PRE:
-&#173;HEADER::ヘッダ
-&#173;FOOTER::フッタ
+­HEADER::ヘッダ
+­FOOTER::フッタ
 ]]
 ----
 HEADER::
@@ -391,17 +391,17 @@ FOOTER::
 テキストの水平配置
 （ページ単位）
 [[PRE:
-&#173;ALIGN::left
-&#173;ALIGN::right
-&#173;ALIGN::center
+­ALIGN::left
+­ALIGN::right
+­ALIGN::center
 ]]
 ----
 テキストの水平配置
 （以後のページすべて）
 [[PRE:
-&#173;GLOBAL-ALIGN::left
-&#173;GLOBAL-ALIGN::right
-&#173;GLOBAL-ALIGN::center
+­GLOBAL-ALIGN::left
+­GLOBAL-ALIGN::right
+­GLOBAL-ALIGN::center
 ]]
 ----
 HEADER::機能
@@ -442,7 +442,7 @@ Let's Enjoy
 Takahashi
 Method
 Life !!
-</html:textarea>
+]]></html:textarea>
  
 <!-- Built-in Style --> 
 <html:style id="builtinStyle" type="text/css" style="visibility: collapse">
