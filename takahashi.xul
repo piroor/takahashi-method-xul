@@ -1316,18 +1316,15 @@ var Presentation = {
 		this.footer.setAttribute('style', 'font-size:10px;');
 		this.footer.value = this.data[this.offset].footer;
 
-		var page = this.content.getAttribute('page');
-		if (page != this.offset) {
+		var page = this.content.getAttribute('page') || 0;
+		var currentContent = this.clearContent();
+		if (!(page in this.cachedContents)) {
 			this.cachedContents[page] = !this.content.hasChildNodes() ? null : {
-				fragment     : this.clearContent(),
+				fragment     : currentContent,
 				offsetWidth  : parseInt(this.content.getAttribute('offsetWidth')),
 				offsetHeight : parseInt(this.content.getAttribute('offsetHeight'))
 			};
 		}
-		else {
-			this.clearContent();
-		}
-
 
 		if (this.data[this.offset].load) {
 			this.isRendering = false;
