@@ -677,6 +677,7 @@ progressmeter .progress-remainder {
 .preformatted-text {
 	font-family: -moz-fixed !important;
 	white-space: pre !important;
+	font-weight: normal;
 }
 
 
