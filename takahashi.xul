@@ -516,6 +516,23 @@ Life !!
 }
 
 
+.ss {
+	font-size: 50%;
+}
+
+.s {
+	font-size: 70%;
+}
+
+.l {
+	font-size: 150%;
+}
+
+.ll {
+	font-size: 200%;
+}
+
+
 
 #canvas column,
 #canvas row {
@@ -639,13 +656,28 @@ progressmeter .progress-remainder {
 }
 
 
-
-
+.aa-text {
+	line-height: 1 !important;
+	font-family:
+		"\ff2d \ff33  \ff30 \30b4 \30b7 \30c3 \30af ",
+		"IPA \30e2 \30ca \30fc P\30b4 \30b7 \30c3 \30af ",
+		Mona !important;
+	font-weight: normal !important;
+	text-align: left !important;
+	white-space: pre !important;
+}
 
 
 
 
 /* System:: DO NOT CHANGE FOLLOWING LINES!! */
+
+#content > hbox {
+	-moz-box-align: center;
+}
+#content > vbox {
+	-moz-box-pack: center;
+}
 
 
 #canvas * {
@@ -1427,11 +1459,15 @@ var Presentation = {
 		var image_src;
 
 		var labelId = 0;
-		var lineRegExp = this.makePhraseRegExp('^([^%O]+)?(%O%Oem:((.+?)(:em)?%C%C)?|%O%O(raw|encoded):((.+?)(:raw|:encoded)?%C%C)?|%O%Opre:((.+?)(:pre)?%C%C)?|%O%O\#[^:]+:((.+?)%C%C)?|%O%Oima?ge? +src="([^"]+)" +width="([0-9]+)" +height="([0-9]+)"[^%C]*%C%C|%O%O(([^\|]+)?\\||)([^%C]+)%C%C|%O([^%C]+)%C)(.+)?', 'i');
+		var lineRegExp = this.makePhraseRegExp('^([^%O]+)?(%O%Oem:((.+?)(:em)?%C%C)?|%O%O(raw|encoded):((.+?)(:raw|:encoded)?%C%C)?|%O%Oaa:((.+?)(:aa)?%C%C)?|%O%Opre:((.+?)(:pre)?%C%C)?|%O%O\#[^:]+:((.+?)%C%C)?|%O%Oima?ge? +src="([^"]+)" +width="([0-9]+)" +height="([0-9]+)"[^%C]*%C%C|%O%O(([^\|]+)?\\||)([^%C]+)%C%C|%O([^%C]+)%C)(.+)?', 'i');
 
 		var emRegExp         = this.makePhraseRegExp('^([^%O]+)?%O%Oem({([^}]*)})?:(.+?)()?%C%C', 'i');
 		var emStartRegExp    = this.makePhraseRegExp('^([^%O]+)?%O%Oem({([^}]*)})?:(.*)', 'i');
 		var emEndRegExp      = this.makePhraseRegExp('^(.*?)((:em)?%C%C)', 'i');
+
+		var aaRegExp         = this.makePhraseRegExp('^([^%O]+)?%O%Oaa({([^}]*)})?:(.+?)()?%C%C', 'i');
+		var aaStartRegExp    = this.makePhraseRegExp('^([^%O]+)?%O%Oaa({([^}]*)})?:(.*)', 'i');
+		var aaEndRegExp      = this.makePhraseRegExp('^(.*?)((:aa)?%C%C)', 'i');
 
 		var preRegExp        = this.makePhraseRegExp('^([^%O]+)?%O%Opre({([^}]*)})?:(.+?)(:pre)?%C%C', 'i');
 		var preStartRegExp   = this.makePhraseRegExp('^([^%O]+)?%O%Opre({([^}]*)})?:(.*)', 'i');
@@ -1478,8 +1514,7 @@ var Presentation = {
 			}
 
 			lineBox = document.createElement('hbox');
-			lineBox.setAttribute('align', 'center');
-			lineBox.setAttribute('pack', this.data[this.offset].align);
+			lineBox.style.MozBoxPack = this.data[this.offset].align;
 			if (hidden)
 				lineBox.setAttribute('hidden-line', true);
 
@@ -1499,25 +1534,30 @@ var Presentation = {
 					blockStyle    = '';
 					blockContents = [];
 				}
-				else if (blockClass == 'preformatted-text' &&
-					preEndRegExp.test(line)) {
+				else if ((blockClass == 'preformatted-text' && preEndRegExp.test(line)) ||
+						(blockClass == 'aa-text' && aaEndRegExp.test(line))) {
 					inBlock = false;
 					blockContents.push(RegExp.$1);
 					line = line.substring((RegExp.$1+RegExp.$2).length);
 
 					lineBox.appendChild(document.createElement('description'));
-					lineBox.lastChild.setAttribute('class', 'preformatted-text block');
+					lineBox.lastChild.setAttribute('class', blockClass+' block');
 					if (blockStyle)
 						lineBox.lastChild.setAttribute('style', blockStyle);
-					lineBox.lastChild.appendChild(document.createTextNode(
-						blockContents.join('\n')
-							.replace(/^[\r\n\s]+/, '')
-							.replace(/[\r\n\s]+$/, '')
-							.replace(/&amp;/g, '&')
-							.replace(/&quot;/g, '"')
-							.replace(/&gt;/g, '>')
-							.replace(/&lt;/g, '<')
-					));
+
+					blockContents = blockContents.join('\n')
+										.replace(/^[\r\n]+/, '')
+										.replace(/[\r\n]+$/, '')
+										.replace(/&amp;/g, '&')
+										.replace(/&quot;/g, '"')
+										.replace(/&gt;/g, '>')
+										.replace(/&lt;/g, '<');
+					if (blockClass == 'preformatted-text')
+						blockContents = blockContents
+										.replace(/^[\r\n\s]+/, '')
+										.replace(/[\r\n\s]+$/, '');
+
+					lineBox.lastChild.appendChild(document.createTextNode(blockContents));
 
 					blockClass    = '';
 					blockStyle    = '';
@@ -1532,7 +1572,7 @@ var Presentation = {
 					lineBox.lastChild.setAttribute('class', blockClass+' block');
 					if (blockStyle)
 						lineBox.lastChild.setAttribute('style', blockStyle);
-					lineBox.lastChild.setAttribute('align', this.data[this.offset].align);
+					lineBox.lastChild.style.MozBoxAlign = this.data[this.offset].align;
 					blockContents = blockContents.join('\n')
 						.replace(/^[\r\n\s]+/, '')
 						.replace(/[\r\n\s]+$/, '')
@@ -1574,8 +1614,7 @@ var Presentation = {
 				for (var j = 1, jmax = line.length; j < jmax; j++)
 				{
 					fragment.lastChild.lastChild.lastChild.lastChild.appendChild(document.createElement('vbox'));
-					fragment.lastChild.lastChild.lastChild.lastChild.lastChild.setAttribute('align', this.data[this.offset].align);
-					fragment.lastChild.lastChild.lastChild.lastChild.lastChild.setAttribute('pack', 'center');
+					fragment.lastChild.lastChild.lastChild.lastChild.lastChild.style.MozBoxAlign = this.data[this.offset].align;
 					if (line[j].charAt(0) == '~') {
 						fragment.lastChild.lastChild.lastChild.lastChild.lastChild.setAttribute('class', 'special');
 						line[j] = line[j].substring(1);
@@ -1615,6 +1654,22 @@ var Presentation = {
 					blockClass    = 'raw';
 					blockStyle    = RegExp.$4;
 					blockContents = [RegExp.$5];
+					newLine       = '';
+				}
+
+				// ASCII Arts
+				if (aaRegExp.test(line)) {
+					lineBox.appendChild(document.createElement('description'));
+					if (RegExp.$3)
+						lineBox.lastChild.setAttribute('style', RegExp.$3);
+					lineBox.lastChild.setAttribute('value', RegExp.$4);
+					lineBox.lastChild.setAttribute('class', 'aa-text');
+				}
+				else if (aaStartRegExp.test(line)) {
+					inBlock       = true;
+					blockClass    = 'aa-text';
+					blockStyle    = RegExp.$3;
+					blockContents = [RegExp.$4];
 					newLine       = '';
 				}
 
@@ -1955,7 +2010,7 @@ var Presentation = {
 		var imagesRegExp2 = this.makePhraseRegExp('%O%Oima?ge?\\s+src="([^"]+)"', 'i');
 		var image_src;
 
-		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
+		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OAA:(.+)(?::AA)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
 
 		var hiddenRegExp = /^(?:HIDDEN|IGNORE)::(?:true|yes|1)\n?/im;
 		var styleRegExp = /^(?:STYLE|CSS)::(?:true|yes|1)/im;
@@ -2113,7 +2168,7 @@ var Presentation = {
 					size   : size || sizeGlobal
 				};
 				data.plain = parts.slice(0, i+1).join('')
-								.replace(plainTextRegExp, '$1$2$3$4$5')
+								.replace(plainTextRegExp, '$1$2$3$4$5$6')
 								.split('\n');
 				if (title !== void(0))
 					data.title = title;
