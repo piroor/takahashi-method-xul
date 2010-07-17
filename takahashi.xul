@@ -660,7 +660,7 @@ progressmeter .progress-remainder {
 	line-height: 1 !important;
 	font-family:
 		"\ff2d \ff33  \ff30 \30b4 \30b7 \30c3 \30af ",
-		"IPA \30e2 \30ca \30fc P\30b4 \30b7 \30c3 \30af ",
+		"IPA \30e2 \30ca \30fc  P\30b4 \30b7 \30c3 \30af ",
 		Mona !important;
 	font-weight: normal !important;
 	text-align: left !important;
