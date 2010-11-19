@@ -2722,10 +2722,22 @@ var Presentation = {
 	hidePlainText : function() 
 	{
 		if (!this.plainTextShown) return;
+
+		var modified = false;
+		var value = this.plainTextField.value.split('\n');
+		if (this.data[this.offset].text.toSource() != value.toSource()) {
+			this.data[this.offset].text = value;
+			delete this.cachedContents[this.offset];
+			modified = true;
+		}
+
 		this.plainTextShown = false;
 		this.plainTextBox.setAttribute('hidden', true);
 		this.plainTextField.value = '';
 		this.plainTextField.blur();
+
+		if (modified)
+			this.takahashi();
 	},
   
 /* state */ 
