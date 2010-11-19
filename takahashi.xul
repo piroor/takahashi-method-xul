@@ -1257,7 +1257,6 @@ var Presentation = {
 
 		window.addEventListener('resize', this, false);
 		window.addEventListener('contextmenu', this, false);
-		window.addEventListener('CanvasContentAdded', this, false);
 
 		this.canvasMain.addEventListener('DOMMouseScroll', this, false);
 		this.indicatorBar.addEventListener('DOMMouseScroll', this, false);
@@ -1531,10 +1530,7 @@ var Presentation = {
 					blockContents.push(RegExp.$1);
 					line = line.substring((RegExp.$1+RegExp.$2).length);
 
-					eval('var xml = <hbox class="raw" style="blockStyle" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+blockContents.join('\n')+'</hbox>;');
-					loadedFlag = { value : false };
-					loadedFlags.push(loadedFlag);
-					importNodeTreeWithDelay(importE4XNode(xml, document, XULNS), lineBox, XULNS, loadedFlag);
+					insertXMLTo('<hbox class="raw" style="blockStyle" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+blockContents.join('\n')+'</hbox>', lineBox);
 
 					blockClass    = '';
 					blockStyle    = '';
@@ -1652,10 +1648,7 @@ var Presentation = {
 
 				// Raw Codes: Parsed as XML
 				if (rawRegExp.test(line)) {
-					eval('var xml = <hbox class="raw" style="'+RegExp.$4+'" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+RegExp.$5+'</hbox>;');
-					loadedFlag = { value : false };
-					loadedFlags.push(loadedFlag);
-					importNodeTreeWithDelay(importE4XNode(xml, document, XULNS), lineBox, XULNS, loadedFlag);
+					insertXMLTo('<hbox class="raw" style="'+RegExp.$4+'" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+RegExp.$5+'</hbox>', lineBox);
 				}
 				else if (rawStartRegExp.test(line)) {
 					inBlock       = true;
@@ -2739,7 +2732,6 @@ var Presentation = {
 	{
 		return (
 				this.isRendering ||
-				importingTimersCount ||
 				this.montaAnimating
 			) ? false : true ;
 	},
@@ -2845,16 +2837,6 @@ var Presentation = {
 						this.canvas.dispatchEvent(event);
 					}
 				}
-				break;
-
-			case 'CanvasContentAdded':
-				if (this.fitToCanvasTimer) {
-					window.clearTimeout(this.fitToCanvasTimer);
-					this.fitToCanvasTimer = null;
-				}
-				this.fitToCanvasTimer = window.setTimeout(function(aSelf) {
-						aSelf.fitMainContentToCanvas();
-					}, 100, this);
 				break;
 
 			case 'DOMMouseScroll':
@@ -3643,104 +3625,27 @@ function getNodesByXPath(aExpression, aContext, aLive)
 	return nodes;
 }
  
-// Import Node from E4X to DOM 
-// http://ecmanaut.blogspot.com/2006/03/e4x-and-dom.html
-
-function importE4XNode( e4x, doc, aDefaultNS )
+function insertXMLTo(aXML, aParent, aRefNode)
 {
-  aDefaultNS = aDefaultNS || XHTMLNS;
-  var root, domTree, importMe;
-  this.Const = this.Const || { mimeType: 'text/xml' };
-  this.Static = this.Static || {};
-  this.Static.parser = this.Static.parser || new DOMParser;
-  eval('root = <testing xmlns="'+aDefaultNS+'" />;');
-  root.test = e4x;
-  domTree = this.Static.parser.parseFromString( root.toXMLString(),
-           this.Const.mimeType );
-  importMe = domTree.documentElement.firstChild;
-  while( importMe && importMe.nodeType != 1 )
-    importMe = importMe.nextSibling;
-  if( !doc ) doc = document;
-  return importMe ? doc.importNode( importMe, true ) : null;
-}
-
-function appendE4XTo( e4x, node, doc, aDefaultNS )
-{
-  return node.appendChild( importE4XNode( e4x, (doc || node.ownerDocument), aDefaultNS ) );
-}
-
-function setE4XContent( e4x, node, aDefaultNS )
-{
-  while( node.firstChild )
-    node.removeChild( node.firstChild );
-  appendE4XTo( e4x, node, aDefaultNS );
-}
-
-// importE4XNodeで得たノードツリーを埋め込むと、XULでバインディングが適用されないことがある。
-// 遅延処理でこの問題を一部避けることができる（が、これでもまだダメな場合がある。menuとか。）
-// とりあえずXULとSVGとXHTMLはいけた。MathMLはダメだった。
-function importNodeTreeWithDelay(aNode, aParent, aDefaultNS, aComplete, aDelayed)
-{
-	if (!aComplete) aComplete = {};
-	if (!('timersCount' in aComplete)) aComplete.timersCount = 0;
-
-	var node;
-	var delay = 1;
-	switch (aNode.nodeType)
-	{
-		case Node.ELEMENT_NODE:
-			var ns = (aNode.namespaceURI || aDefaultNS);
-			node = document.createElementNS(ns, aNode.localName);
-			aParent.appendChild(node);
-
-			var attr = aNode.attributes;
-			for (var i = 0, maxi = attr.length; i < maxi; i++)
-				node.setAttribute(attr[i].name, attr[i].value);
-
-			if (ns == XULNS) delay = 1; else delay = 0;
-
-			var children = aNode.childNodes;
-			for (var i = 0, maxi = children.length; i < maxi; i++)
-				if (delay) {
-					importingTimersCount++;
-					aComplete.timersCount++;
-					window.setTimeout(importNodeTreeWithDelay, delay, children[i], node, aDefaultNS, aComplete, true);
-				}
-				else
-					importNodeTreeWithDelay(children[i], node, aDefaultNS, aComplete);
-			break;
-
-		default:
-			if (
-				aNode.nodeType != Node.TEXT_NODE ||
-				!/^\s*$/.test(aNode.nodeValue) ||
-				(aNode.parentNode.namespaceURI || aDefaultNS) == XHTMLNS
-				) {
-				node = aParent.appendChild(aNode.cloneNode(true));
-			}
-			break;
+	var range = aParent.ownerDocument.createRange();
+	range.selectNodeContents(aParent);
+	if (aRefNode && aRefNode.parentNode == aParent) {
+		range.setStartBefore(aRefNode);
+		range.setEndBefore(aRefNode);
 	}
-
-	if (aDelayed) {
-		importingTimersCount--;
-		aComplete.timersCount--;
-	}
-
-	if (node) {
-		var event = document.createEvent('Events');
-		event.initEvent('CanvasContentAdded', true, true);
-		node.dispatchEvent(event);
-	}
-
-	if (!aComplete.timersCount) {
-		window.setTimeout(function() {
-			aComplete.value = true;
-		}, 100);
-	}
-
-	return node;
+	var fragment = range.createContextualFragment(aXML);
+	// clear white-space nodes from XUL tree
+	(function(aNode) {
+		Array.slice(aNode.childNodes).forEach(arguments.callee);
+		if (aNode.parentNode &&
+			aNode.parentNode.namespaceURI == XULNS &&
+			aNode.nodeType == Node.TEXT_NODE &&
+			aNode.nodeValue.replace(/^\s+|\s+$/g, '') == '')
+			aNode.parentNode.removeChild(aNode);
+	})(fragment);
+	range.insertNode(fragment);
+	range.detach();
 }
-var importingTimersCount = 0;
  
 ]]></script> 
   
