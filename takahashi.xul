@@ -534,9 +534,14 @@ Life !!
 
 
 
-#canvas column,
-#canvas row {
+#canvas row > * {
 	border: 1px solid gray;
+}
+#canvas row + row {
+	margin-top: -1px;
+}
+#canvas column + column {
+	margin-left: -1px;
 }
 
 #canvas grid .special {
@@ -795,7 +800,8 @@ tabbox, tabpanels, tabpanel {
 }
 
 
-[hidden-line="true"] {
+[hidden-line="true"],
+[hidden-row="true"] {
 	visibility: hidden;
 }
 
@@ -1609,6 +1615,8 @@ var Presentation = {
 				}
 				fragment.lastChild.lastChild.lastChild.appendChild(document.createElement('row'));
 				fragment.lastChild.lastChild.lastChild.lastChild.setAttribute('flex', 1);
+				if (hidden)
+					fragment.lastChild.lastChild.lastChild.lastChild.setAttribute('hidden-row', true);
 
 				line = line.split('|');
 				for (var j = 1, jmax = line.length; j < jmax; j++)
