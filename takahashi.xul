@@ -798,6 +798,7 @@ tabbox, tabpanels, tabpanel {
 #canvas row description {
 	border: 1px solid transparent;
 	white-space: pre;
+	line-height: 1;
 }
 
 
