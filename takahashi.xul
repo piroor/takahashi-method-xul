@@ -993,6 +993,8 @@ tabbox, tabpanels, tabpanel {
 			<toolbarbutton label="Edit"
 				oncommand="Presentation.toggleEditMode();"/>
 			<toolbarbutton oncommand="Presentation.reload();" label="Reload"/>
+			<toolbarbutton label="Note"
+				oncommand="Presentation.toggleNote();"/>
 		</toolbar>
 	</toolbox>
 	<vbox flex="1" id="canvas">
@@ -1165,8 +1167,8 @@ tabbox, tabpanels, tabpanel {
 	<key keycode="VK_HOME"       command="cmd_home"/>
 	<key keycode="VK_END"        command="cmd_end"/>
 
-	<key id="key_insert_newpage"
-		key="n" modifiers="accel" oncommand="Presentation.insert('page');"/>
+	<!--key id="key_insert_newpage"
+		key="n" modifiers="accel" oncommand="Presentation.insert('page');"/-->
 
 	<key id="key_save"
 		key="s" modifiers="accel" oncommand="Presentation.output();"/>
@@ -1179,6 +1181,9 @@ tabbox, tabpanels, tabpanel {
 		key="e" modifiers="accel" oncommand="Presentation.toggleEditMode();"/>
 	<key id="key_toggleEvaMode"
 		key="e" modifiers="accel,shift" oncommand="Presentation.toggleEvaMode();"/>
+
+	<key id="key_toggleNote"
+		key="n" modifiers="accel" oncommand="Presentation.toggleNote();"/>
 
 	<key id="key_plainText"
 		key="u" modifiers="accel" oncommand="Presentation.showPlainText();"/>
@@ -1224,6 +1229,8 @@ var Presentation = {
 	cachedContents : [],
 	sourceData     : [],
 	_alias         : {},
+
+	noteWindow : null,
  
 	init : function(option){ 
 		if (this.initialized) {
@@ -1259,6 +1266,7 @@ var Presentation = {
 
 		window.addEventListener('resize', this, false);
 		window.addEventListener('contextmenu', this, false);
+		window.addEventListener('unload', this, false);
 
 		this.canvasMain.addEventListener('DOMMouseScroll', this, false);
 		this.indicatorBar.addEventListener('DOMMouseScroll', this, false);
@@ -1346,7 +1354,6 @@ var Presentation = {
 
 		this.clickableNodes = [];
 
-
 		if ('title' in this.data[this.offset])
 			document.title = this.data[this.offset].title;
 
@@ -1399,6 +1406,8 @@ var Presentation = {
 		}
 
 		this.list.getElementsByAttribute('value', this.offset)[0].setAttribute('checked', true);
+
+		this.updateNote();
 
 		if (!content.isComplete ||
 			typeof content.isComplete != 'function' ||
@@ -1466,7 +1475,7 @@ var Presentation = {
 		var image_src;
 
 		var labelId = 0;
-		var lineRegExp = this.makePhraseRegExp('^([^%O]+)?(%O%Oem:((.+?)(:em)?%C%C)?|%O%O(raw|encoded):((.+?)(:raw|:encoded)?%C%C)?|%O%Oaa:((.+?)(:aa)?%C%C)?|%O%Opre:((.+?)(:pre)?%C%C)?|%O%O\#[^:]+:((.+?)%C%C)?|%O%Oima?ge? +src="([^"]+)" +width="([0-9]+)" +height="([0-9]+)"[^%C]*%C%C|%O%O(([^\|]+)?\\||)([^%C]+)%C%C|%O([^%C]+)%C)(.+)?', 'i');
+		var lineRegExp = this.makePhraseRegExp('^([^%O]+)?(%O%Oem:((.+?)(:em)?%C%C)?|%O%O(raw|encoded):((.+?)(:raw|:encoded)?%C%C)?|%O%Oaa:((.+?)(:aa)?%C%C)?|%O%Opre:((.+?)(:pre)?%C%C)?|%O%Onote:(?:(?:.+?)(?::note)?%C%C)?|%O%O\#[^:]+:((.+?)%C%C)?|%O%Oima?ge? +src="([^"]+)" +width="([0-9]+)" +height="([0-9]+)"[^%C]*%C%C|%O%O(([^\|]+)?\\||)([^%C]+)%C%C|%O([^%C]+)%C)(.+)?', 'i');
 
 		var emRegExp         = this.makePhraseRegExp('^([^%O]+)?%O%Oem({([^}]*)})?:(.+?)()?%C%C', 'i');
 		var emStartRegExp    = this.makePhraseRegExp('^([^%O]+)?%O%Oem({([^}]*)})?:(.*)', 'i');
@@ -1483,6 +1492,10 @@ var Presentation = {
 		var rawRegExp        = this.makePhraseRegExp('^([^%O]+)?%O%O(raw|encoded)({([^}]*)})?:(.+?)(:raw|:encoded)?%C%C', 'i');
 		var rawStartRegExp   = this.makePhraseRegExp('^([^%O]+)?%O%O(raw|encoded)({([^}]*)})?:(.*)', 'i');
 		var rawEndRegExp     = this.makePhraseRegExp('^(.*?)((:raw|:encoded)?%C%C)', 'i');
+
+		var noteRegExp        = this.makePhraseRegExp('^([^%O]+)?%O%Onote({([^}]*)})?:(.+?)(:note)?%C%C', 'i');
+		var noteStartRegExp   = this.makePhraseRegExp('^([^%O]+)?%O%Onote({([^}]*)})?:(.*)', 'i');
+		var noteEndRegExp     = this.makePhraseRegExp('^(.*?)((:note)?%C%C)', 'i');
 
 		var styleRegExp      = this.makePhraseRegExp('^([^%O]+)?%O%O(#([^:{]*))?({([^}]*)})?:(.+?)%C%C', '');
 		var styleStartRegExp = this.makePhraseRegExp('^([^%O]+)?%O%O(#([^:{]*))?({([^}]*)})?:(.*)', '');
@@ -1563,6 +1576,13 @@ var Presentation = {
 
 					lineBox.lastChild.appendChild(document.createTextNode(blockContents));
 
+					blockClass    = '';
+					blockStyle    = '';
+					blockContents = [];
+				}
+				else if (blockClass == 'note' && noteEndRegExp.test(line)) {
+					inBlock = false;
+					line = line.substring((RegExp.$1+RegExp.$2).length);
 					blockClass    = '';
 					blockStyle    = '';
 					blockContents = [];
@@ -1724,6 +1744,17 @@ var Presentation = {
 					newLine       = '';
 				}
 
+				// notes
+				else if (noteRegExp.test(line)) {
+				}
+				else if (noteStartRegExp.test(line)) {
+					inBlock       = true;
+					blockClass    = 'note';
+					blockStyle    = RegExp.$3;
+					blockContents = [RegExp.$4];
+					newLine       = '';
+				}
+
 				// Images
 				else if (imagesRegExp.test(line)) {
 					image_src = RegExp.$2;
@@ -1776,6 +1807,7 @@ var Presentation = {
 					lineBox.lastChild.lastChild.setAttribute('label-id', 'label-' + (++labelId));
 
 					lineBox.lastChild.lastChild.setAttribute('monta-hidden', 'true');
+
 
 					this.clickableNodes.push(lineBox.lastChild.lastChild);
 				}
@@ -2013,7 +2045,11 @@ var Presentation = {
 		var imagesRegExp2 = this.makePhraseRegExp('%O%Oima?ge?\\s+src="([^"]+)"', 'i');
 		var image_src;
 
-		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OAA:(.+)(?::AA)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
+		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OAA:(.+)(?::AA)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%ONOTE:(.+)(?::NOTE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
+
+		var noteRegExp = this.makePhraseRegExp('%O%ONOTE:(.+)(?::NOTE)?%C%C', 'i');
+		var noteMatchResults;
+		var lastNote = '';
 
 		var hiddenRegExp = /^(?:HIDDEN|IGNORE)::(?:true|yes|1)\n?/im;
 		var styleRegExp = /^(?:STYLE|CSS)::(?:true|yes|1)/im;
@@ -2072,6 +2108,7 @@ var Presentation = {
 							default:
 								break;
 						}
+
 						aSelf.setTimer(aTime);
 					}
 				}, 100, this, parseInt(RegExp.$1), (RegExp.$2 || '').toLowerCase());
@@ -2154,6 +2191,11 @@ var Presentation = {
 					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
 			}
 
+			noteMatchResults = source.replace(/\n/g, '<br/>').match(noteRegExp);
+			if (noteMatchResults) {
+				lastNote = noteMatchResults[1].replace(/<br\/>/g, '\n');
+			}
+
 			source = source.replace(/^\s+|\s+$/g, '');
 
 			parts = this._splitPageToParts(source);
@@ -2168,10 +2210,11 @@ var Presentation = {
 					footer : footer,
 					text   : source.split('\n'),
 					align  : align || alignGlobal,
-					size   : size || sizeGlobal
+					size   : size || sizeGlobal,
+					note   : lastNote
 				};
 				data.plain = parts.slice(0, i+1).join('')
-								.replace(plainTextRegExp, '$1$2$3$4$5$6')
+								.replace(plainTextRegExp, '$1$2$3$4$6$7')
 								.split('\n');
 				if (title !== void(0))
 					data.title = title;
@@ -2430,6 +2473,37 @@ var Presentation = {
 			check.checked = true;
 		}
 		this.setHash('eva', check.checked ? 'eva' : '' );
+	},
+ 
+	toggleNote : function()
+	{
+		if (this.noteWindow && !this.noteWindow.closed) {
+			this.noteWindow.close();
+			this.noteWindow = null;
+		}
+		else {
+			this.noteWindow = window.open('about:blank', 'takahashi_xul_note_window');
+			this.updateNote();
+		}
+	},
+	updateNote : function()
+	{
+		if (!this.noteWindow)
+			return;
+
+		if (this.noteWindow.closed) {
+			this.noteWindow = null;
+			return;
+		}
+		var w = this.noteWindow;
+		window.setTimeout(function(aNote) {
+			if (w.document.body.firstChild &&
+				w.document.body.firstChild.textContent == aNote)
+				return;
+
+			w.document.body.innerHTML = '<pre style="white-space:pre-wrap; font-size: large;"></pre>';
+			w.document.body.firstChild.textContent = aNote;
+		}, 100, this.data[this.offset].note);
 	},
   
 /* auto cruise */ 
@@ -2768,6 +2842,12 @@ var Presentation = {
 	
 	handleEvent : function(aEvent) 
 	{
+		if (aEvent.type == 'unload') {
+			if (this.noteWindow && !this.noteWindow.closed)
+				this.noteWindow.close();
+			return;
+		}
+
 		if (this.isPrinting) return;
 
 		var node = aEvent.target;
