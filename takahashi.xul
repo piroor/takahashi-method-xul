@@ -1917,21 +1917,17 @@ var Presentation = {
 				/(\r\n|[\r\n])/g
 			];
 
+		var commandLineRegExp = /^(TITLE|HEADER|FOOTER|CHAPTER|GLOBAL-ALIGN|ALIGN|GLOBAL-SIZE|SIZE|HIDDEN|GINORE|STYLE|CSS|DEFINE-ALIAS|ALIAS|LOAD|SET-TIMER|NOTE)::[ \t]*([^\n]*)[ \t]*\n?/im;
+
 		var title;
-		var titleRegExp   = /^(TITLE::)([^\n]*)\n?/im;
 		var header        = '';
-		var headerRegExp  = /^(HEADER::)([^\n]*)\n?/im;
 		var footer        = '';
-		var footerRegExp  = /^(FOOTER::)([^\n]*)\n?/im;
 		var chapter       = '';
-		var chapterRegExp = /^(CHAPTER::)([^\n]*)\n?/im;
 		var lastChapter;
 		var alignGlobal   = 'center';
 		var align;
-		var alignRegExp   = /^((GLOBAL-)?ALIGN::)(left|right|center|start|end)?\n?/im;
 		var size;
 		var sizeGlobal  = 9;
-		var sizeRegExp  = /^((GLOBAL-)?SIZE::)(\d+(\.\d+)?)\n?/im;
 
 		var imageMatchResults;
 		var imagesRegExp  = this.makePhraseRegExp('%O%Oima?ge?\\s+src="[^"]+"(\\s+(width|height)="[0-9]+"(\\s+(width|height)="[0-9]+")?)?\\s*[^%C]*%C%C', 'gi');
@@ -1941,17 +1937,7 @@ var Presentation = {
 		var plainTextRegExp = this.makePhraseRegExp('(?:%O%O\#(?:[^{:][^:]*|\{[^}]+\}):(.+)%C%C|%O%OEM:(.+)(?::EM)?%C%C|%O%OAA:(.+)(?::AA)?%C%C|%O%OPRE:(.+)(?::PRE)?%C%C|%O%ONOTE:(.+)(?::NOTE)?%C%C|%O%Oima?ge?\\s+src="[^"]*"[^%C]*%C%C|%O%O(?:[^\\|%C]+)(\\|[^%C]+)?%C%C|%O([^%O]+)%C)', 'gi');
 
 		var noteRegExp = this.makePhraseRegExp('%O%ONOTE:(.+)(?::NOTE)?%C%C', 'i');
-		var noteMatchResults;
 		var lastNote = '';
-
-		var hiddenRegExp = /^(?:HIDDEN|IGNORE)::(?:true|yes|1)\n?/im;
-		var styleRegExp = /^(?:STYLE|CSS)::(?:true|yes|1)/im;
-
-		var aliasRegExp = /^(?:DEFINE-)?ALIAS::([^=]+)=(.+)\n?/gim;
-
-
-		var loadRegExp  = /^LOAD::(.+)\n?/im;
-		var timerRegExp = /^SET-TIMER::(\d+)(.*)\n?/im;
 
 		var dataObj;
 		var menuContents = document.createDocumentFragment();
@@ -1972,110 +1958,121 @@ var Presentation = {
 
 			this.sourceData.push(source);
 
-			if (loadRegExp.test(source)) {
-				source = source.replace(loadRegExp, '');
-				dataPath = RegExp.$1;
-			}
+			let hidden = false;
+			let commandMatchResult;
+			while ((commandMatchResult = source.match(commandLineRegExp)) && !hidden) {
+				source = source.replace(commandLineRegExp, '');
+				let command = commandMatchResult[1].toLowerCase();
+				let value = commandMatchResult[2];
+				switch (command)
+				{
+					case 'load':
+						dataPath = value;
+						break;
 
-			if (timerRegExp.test(source)) {
-				source = source.replace(timerRegExp, '');
-				window.setTimeout(function(aSelf, aTime, aUnit) {
-					if (!aSelf.timerTimer) {
-						switch(aUnit)
-						{
-							case 's':
-							case 'sec':
-							case 'sec.':
-							case 'second':
-							case 'seconds':
-								aTime = aTime / 60;
-								break;
+					case 'set-timer':
+						window.setTimeout(function(aSelf, aValue) {
+							if (aSelf.timerTimer)
+								return;
+							var timeMatchResult = aValue.match(/(\d+)(.*)/);
+							var time = timeMatchResult[1];
+							switch((timeMatchResult[2] || '').toLowerCase())
+							{
+								case 's':
+								case 'sec':
+								case 'sec.':
+								case 'second':
+								case 'seconds':
+									time = time / 60;
+									break;
 
-							case 'h':
-							case 'hour':
-							case 'hours':
-								aTime = aTime * 60;
-								break;
+								case 'h':
+								case 'hour':
+								case 'hours':
+									time = time * 60;
+									break;
 
-							default:
-								break;
+								default:
+									break;
+							}
+							aSelf.setTimer(time);
+						}, 100, this, value);
+						break;
+
+					case 'style':
+					case 'css':
+						document.insertBefore(
+							document.createProcessingInstruction(
+								'xml-stylesheet',
+								'href="data:text/css,'+
+									escape(source)+
+									'" type="text/css"'
+							),
+							document.documentElement
+						);
+						hidden = true;
+						break;
+
+					case 'note':
+						lastNote = source;
+						hidden = true;
+						break;
+
+					case 'hidden':
+					case 'ignore':
+						if (/^(true|yes|1)$/.test(value))
+							hidden = true;
+						break;
+
+					case 'title':
+						title = value || '' ;
+						break;
+
+					case 'header':
+						header = value || '' ;
+						break;
+
+					case 'footer':
+						footer = value || '' ;
+						break;
+
+					case 'chapter':
+						chapter = value || '' ;
+						break;
+
+					case 'global-align':
+					case 'align':
+						align = (value || '').toLowerCase();
+						if (align == 'left')
+							align = 'start';
+						else if (align == 'right')
+							align = 'end';
+
+						if (command == 'global-align') {
+							alignGlobal = align;
+							align = null;
 						}
+						break;
 
-						aSelf.setTimer(aTime);
-					}
-				}, 100, this, parseInt(RegExp.$1), (RegExp.$2 || '').toLowerCase());
-			}
+					case 'global-size':
+					case 'size':
+						size = Math.max(0, Number(value || this.baseSize));
+						if (command == 'global-size') {
+							sizeGlobal = size;
+							size = null;
+						}
+						break;
 
-			if (styleRegExp.test(source)) {
-				document.insertBefore(
-					document.createProcessingInstruction(
-						'xml-stylesheet',
-						'href="data:text/css,'+
-							escape(source.replace(styleRegExp, ''))+
-							'" type="text/css"'
-					),
-					document.documentElement
-				);
-				continue;
-			}
-
-			if (hiddenRegExp.test(source)) {
-				continue;
-			}
-
-			while (titleRegExp.test(source)) {
-				source = source.replace(titleRegExp, '');
-				if (String(RegExp.$1).toUpperCase() == 'TITLE::')
-					title = RegExp.$2 || '' ;
-			}
-
-			while (headerRegExp.test(source)) {
-				source = source.replace(headerRegExp, '');
-				if (String(RegExp.$1).toUpperCase() == 'HEADER::')
-					header = RegExp.$2 || '' ;
-			}
-
-			while (footerRegExp.test(source)) {
-				source = source.replace(footerRegExp, '');
-				if (String(RegExp.$1).toUpperCase() == 'FOOTER::')
-					footer = RegExp.$2 || '' ;
-			}
-
-			while (chapterRegExp.test(source)) {
-				source = source.replace(chapterRegExp, '');
-				if (String(RegExp.$1).toUpperCase() == 'CHAPTER::')
-					chapter = RegExp.$2 || '' ;
-			}
-
-			while (alignRegExp.test(source)) {
-				source = source.replace(alignRegExp, '');
-
-				align = (RegExp.$3 || '').toLowerCase();
-				if (align == 'left')
-					align = 'start';
-				else if (align == 'right')
-					align = 'end';
-
-				if (String(RegExp.$1).toUpperCase() == 'GLOBAL-ALIGN::') {
-					alignGlobal = align;
-					align = null;
+					case 'define-alias':
+					case 'alias':
+						let (aliasMatchResult = value.match(/([^=]+)=(.+)/)) {
+							this._alias[aliasMatchResult[1]] = aliasMatchResult[2];
+						}
+						break;
 				}
 			}
-
-			while (sizeRegExp.test(source)) {
-				source = source.replace(sizeRegExp, '');
-				size = Math.max(0, Number(RegExp.$3 || this.baseSize));
-				if (String(RegExp.$1).toUpperCase() == 'GLOBAL-SIZE::') {
-					sizeGlobal = size;
-					size = null;
-				}
-			}
-
-			(source.match(aliasRegExp) || []).forEach(function(aLine) {
-				aliasRegExp.test(aLine);
-				this._alias[RegExp.$1] = RegExp.$2;
-			}, this);
-			source = source.replace(aliasRegExp, '');
+			if (hidden)
+				continue;
 
 			imageMatchResults = source.match(imagesRegExp);
 			if (imageMatchResults) {
@@ -2083,7 +2080,7 @@ var Presentation = {
 					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
 			}
 
-			noteMatchResults = source.replace(/\n/g, '<br/>').match(noteRegExp);
+			let noteMatchResults = source.replace(/\n/g, '<br/>').match(noteRegExp);
 			if (noteMatchResults) {
 				lastNote = noteMatchResults[1].replace(/<br\/>/g, '\n');
 			}
