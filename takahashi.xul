@@ -486,7 +486,7 @@ Life !!
 	font-weight: 900;
 }
 
-.em-text {
+.em {
 	color: red !important;
 	font-size: 120%;
 }
@@ -502,7 +502,7 @@ Life !!
 	color: red !important;
 }
 
-.preformatted-text.block {
+.pre.block {
 	border: 1px dashed gray;
 	padding: 0.3em;
 	margin: 0.3em;
@@ -627,7 +627,7 @@ progressmeter .progress-remainder {
 		"ヒラギノ明朝 Pro W6"
 		serif !important;
 }
-#canvas[eva="true"] .em-text {
+#canvas[eva="true"] .em {
 	color: green !important;
 }
 #canvas[eva="true"] .link-text {
@@ -662,7 +662,7 @@ progressmeter .progress-remainder {
 }
 
 
-.aa-text {
+.aa {
 	line-height: 1 !important;
 	font-family:
 		"\ff2d \ff33  \ff30 \30b4 \30b7 \30c3 \30af ",
@@ -712,7 +712,7 @@ progressmeter .progress-remainder {
 
 
 
-.preformatted-text {
+.pre {
 	font-family: -moz-fixed !important;
 	white-space: pre !important;
 	font-weight: normal;
@@ -1191,7 +1191,7 @@ tabbox, tabpanels, tabpanel {
 </keyset>
   
 <!-- Implementation --> 
-<script type="application/x-javascript; e4x=1"><![CDATA[
+<script type="application/javascript; e4x=1"><![CDATA[
 	 
 const XULNS   = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul'; 
 const XHTMLNS = 'http://www.w3.org/1999/xhtml';
@@ -1397,7 +1397,7 @@ var Presentation = {
 
 
 		try {
-			var checkedItems = this.list.getElementsByAttribute('checked', 'true');
+			let checkedItems = this.list.getElementsByAttribute('checked', 'true');
 			max = checkedItems.length;
 			for (i = max-1; i > -1 ; i--)
 				checkedItems[i].removeAttribute('checked');
@@ -1407,20 +1407,7 @@ var Presentation = {
 
 		this.list.getElementsByAttribute('value', this.offset)[0].setAttribute('checked', true);
 
-		this.updateNote();
-
-		if (!content.isComplete ||
-			typeof content.isComplete != 'function' ||
-			content.isComplete()) {
-			this.finishTakahashi();
-		}
-		else {
-			var waitingTimer = window.setInterval(function(aSelf) {
-					if (!content.isComplete()) return;
-					window.clearInterval(waitingTimer);
-					aSelf.finishTakahashi();
-				}, 100, this);
-		}
+		this.finishTakahashi();
 	},
 	finishTakahashi : function()
 	{
@@ -1448,6 +1435,8 @@ var Presentation = {
 		var event = document.createEvent('Events');
 		event.initEvent('PresentationRedraw', false, true);
 		this.canvas.dispatchEvent(event);
+
+		this.updateNote();
 	},
 	clearContent : function()
 	{
@@ -1465,48 +1454,20 @@ var Presentation = {
 				offsetHeight : 0
 			};
 		var text = this.data[this.offset].text;
-		var line;
-		var newLine;
-		var uri;
-		var image_width;
-		var images_width;
-		var image_height;
-		var images_height;
-		var image_src;
 
-		var labelId = 0;
-		var lineRegExp = this.makePhraseRegExp('^([^%O]+)?(%O%Oem:((.+?)(:em)?%C%C)?|%O%O(raw|encoded):((.+?)(:raw|:encoded)?%C%C)?|%O%Oaa:((.+?)(:aa)?%C%C)?|%O%Opre:((.+?)(:pre)?%C%C)?|%O%Onote:(?:(?:.+?)(?::note)?%C%C)?|%O%O\#[^:]+:((.+?)%C%C)?|%O%Oima?ge? +src="([^"]+)" +width="([0-9]+)" +height="([0-9]+)"[^%C]*%C%C|%O%O(([^\|]+)?\\||)([^%C]+)%C%C|%O([^%C]+)%C)(.+)?', 'i');
+		var phraseTags = 'em|raw|encoded|aa|pre|style|note|#[^:{]*';
 
-		var emRegExp         = this.makePhraseRegExp('^([^%O]+)?%O%Oem({([^}]*)})?:(.+?)()?%C%C', 'i');
-		var emStartRegExp    = this.makePhraseRegExp('^([^%O]+)?%O%Oem({([^}]*)})?:(.*)', 'i');
-		var emEndRegExp      = this.makePhraseRegExp('^(.*?)((:em)?%C%C)', 'i');
-
-		var aaRegExp         = this.makePhraseRegExp('^([^%O]+)?%O%Oaa({([^}]*)})?:(.+?)()?%C%C', 'i');
-		var aaStartRegExp    = this.makePhraseRegExp('^([^%O]+)?%O%Oaa({([^}]*)})?:(.*)', 'i');
-		var aaEndRegExp      = this.makePhraseRegExp('^(.*?)((:aa)?%C%C)', 'i');
-
-		var preRegExp        = this.makePhraseRegExp('^([^%O]+)?%O%Opre({([^}]*)})?:(.+?)(:pre)?%C%C', 'i');
-		var preStartRegExp   = this.makePhraseRegExp('^([^%O]+)?%O%Opre({([^}]*)})?:(.*)', 'i');
-		var preEndRegExp     = this.makePhraseRegExp('^(.*?)((:pre)?%C%C)', 'i');
-
-		var rawRegExp        = this.makePhraseRegExp('^([^%O]+)?%O%O(raw|encoded)({([^}]*)})?:(.+?)(:raw|:encoded)?%C%C', 'i');
-		var rawStartRegExp   = this.makePhraseRegExp('^([^%O]+)?%O%O(raw|encoded)({([^}]*)})?:(.*)', 'i');
-		var rawEndRegExp     = this.makePhraseRegExp('^(.*?)((:raw|:encoded)?%C%C)', 'i');
-
-		var noteRegExp        = this.makePhraseRegExp('^([^%O]+)?%O%Onote({([^}]*)})?:(.+?)(:note)?%C%C', 'i');
-		var noteStartRegExp   = this.makePhraseRegExp('^([^%O]+)?%O%Onote({([^}]*)})?:(.*)', 'i');
-		var noteEndRegExp     = this.makePhraseRegExp('^(.*?)((:note)?%C%C)', 'i');
-
-		var styleRegExp      = this.makePhraseRegExp('^([^%O]+)?%O%O(#([^:{]*))?({([^}]*)})?:(.+?)%C%C', '');
-		var styleStartRegExp = this.makePhraseRegExp('^([^%O]+)?%O%O(#([^:{]*))?({([^}]*)})?:(.*)', '');
-		var styleEndRegExp   = this.makePhraseRegExp('^(.*?)(%C%C)', '');
+		var lineRegExp = this.makePhraseRegExp('^([^%O]+)?(%O%O('+phraseTags+'):((.+?)(:(?:'+phraseTags+'))?%C%C)?|%O%O\#[^:]+:((.+?)%C%C)?|%O%Oima?ge? +src="([^"]+)"[^%C]*?%C%C|%O%O(([^\|]+)?\\||)([^%C]+?)%C%C|%O([^%C]+?)%C)(.+)?', 'i');
 
 		var imagesRegExp     = this.makePhraseRegExp('^([^%O]+)?%O%Oima?ge?\\s+src="([^"]+)"(\\s+(width|height)="([0-9]+%?)"(\\s+(width|height)="([0-9]+%?)")?)?\\s*[^%C]*%C%C', 'i');
-
 		var linksRegExp      = this.makePhraseRegExp('^([^%O]+)?%O%O(([^|]+)?\\||)([^%C]+)%C%C', '');
-
 		var montaRegExp      = this.makePhraseRegExp('^([^%O]+)?%O([^%C]+)%C', '');
 
+		var inlineRegExp     = this.makePhraseRegExp('^([^%O]+)?%O%O('+phraseTags+')(?:{([^}]*)})?:(.+?)(?::(?:'+phraseTags+'))?%C%C', 'i');
+		var blockStartRegExp = this.makePhraseRegExp('^([^%O]+)?%O%O('+phraseTags+')(?:{([^}]*)})?:(.*)', 'i');
+		var blockEndRegExp   = this.makePhraseRegExp('^(.*?)((?::(?:'+phraseTags+'))?%C%C)', 'i');
+
+		var labelId = 0;
 		var inBlock       = false,
 			blockClass    = '',
 			blockStyle    = '',
@@ -1517,94 +1478,79 @@ var Presentation = {
 
 		var fragment = document.createDocumentFragment();
 
-		var lineBox;
 		var hidden = false;
-		var loadedFlag;
-		var loadedFlags = [];
 		for (var i = 0, max = text.length; i < max; i++)
 		{
-			line = text[i];
-			images_width  = 0;
-			images_height = 0;
-			if (!line) line = ' ';
+			let line = text[i] || ' ' ;
+			let images_width  = 0;
+			let images_height = 0;
 
 			if (line == '----') {
 				hidden = true;
 				continue;
 			}
 
-			lineBox = document.createElement('hbox');
+			let lineBox = document.createElement('hbox');
 			lineBox.style.MozBoxPack = this.data[this.offset].align;
 			if (hidden)
 				lineBox.setAttribute('hidden-line', true);
 
 			if (inBlock) {
-				if (blockClass == 'raw' &&
-					rawEndRegExp.test(line)) {
+				let endMatchResult = line.match(blockEndRegExp);
+				if (endMatchResult) {
 					inBlock = false;
-					blockContents.push(RegExp.$1);
-					line = line.substring((RegExp.$1+RegExp.$2).length);
 
-					insertXMLTo('<hbox class="raw" style="blockStyle" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+blockContents.join('\n')+'</hbox>', lineBox);
+					if (blockClass != 'note')
+						blockContents.push(endMatchResult[1]);
+					line = line.substring((endMatchResult[1]+endMatchResult[2]).length);
 
-					blockClass    = '';
-					blockStyle    = '';
-					blockContents = [];
-				}
-				else if ((blockClass == 'preformatted-text' && preEndRegExp.test(line)) ||
-						(blockClass == 'aa-text' && aaEndRegExp.test(line))) {
-					inBlock = false;
-					blockContents.push(RegExp.$1);
-					line = line.substring((RegExp.$1+RegExp.$2).length);
-
-					lineBox.appendChild(document.createElement('description'));
-					lineBox.lastChild.setAttribute('class', blockClass+' block');
-					if (blockStyle)
-						lineBox.lastChild.setAttribute('style', blockStyle);
-
-					blockContents = blockContents.join('\n')
-										.replace(/^[\r\n]+/, '')
-										.replace(/[\r\n]+$/, '')
-										.replace(/&amp;/g, '&')
-										.replace(/&quot;/g, '"')
-										.replace(/&gt;/g, '>')
-										.replace(/&lt;/g, '<');
-					if (blockClass == 'preformatted-text')
-						blockContents = blockContents
-										.replace(/^[\r\n\s]+/, '')
-										.replace(/[\r\n\s]+$/, '');
-
-					lineBox.lastChild.appendChild(document.createTextNode(blockContents));
-
-					blockClass    = '';
-					blockStyle    = '';
-					blockContents = [];
-				}
-				else if (blockClass == 'note' && noteEndRegExp.test(line)) {
-					inBlock = false;
-					line = line.substring((RegExp.$1+RegExp.$2).length);
-					blockClass    = '';
-					blockStyle    = '';
-					blockContents = [];
-				}
-				else if (emEndRegExp.test(line) || styleEndRegExp.test(line)) {
-					inBlock = false;
-					blockContents.push(RegExp.$1);
-					line = line.substring((RegExp.$1+RegExp.$2).length);
-
-					lineBox.appendChild(document.createElement('vbox'));
-					lineBox.lastChild.setAttribute('class', blockClass+' block');
-					if (blockStyle)
-						lineBox.lastChild.setAttribute('style', blockStyle);
-					lineBox.lastChild.style.MozBoxAlign = this.data[this.offset].align;
-					blockContents = blockContents.join('\n')
-						.replace(/^[\r\n\s]+/, '')
-						.replace(/[\r\n\s]+$/, '')
-						.split('\n');
-					for (var j = 0, jmax = blockContents.length; j < jmax; j++)
+					switch (blockClass)
 					{
-						lineBox.lastChild.appendChild(document.createElement('description'));
-						lineBox.lastChild.lastChild.setAttribute('value', blockContents[j]);
+						case 'raw':
+							insertXMLTo('<hbox class="raw" style="blockStyle" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+blockContents.join('\n')+'</hbox>', lineBox);
+							break;
+
+						case 'pre':
+						case 'aa':
+							lineBox.appendChild(document.createElement('description'));
+							lineBox.lastChild.setAttribute('class', blockClass+' block');
+							if (blockStyle)
+								lineBox.lastChild.setAttribute('style', blockStyle);
+
+							blockContents = blockContents.join('\n')
+												.replace(/^[\r\n]+/, '')
+												.replace(/[\r\n]+$/, '')
+												.replace(/&amp;/g, '&')
+												.replace(/&quot;/g, '"')
+												.replace(/&gt;/g, '>')
+												.replace(/&lt;/g, '<');
+							if (blockClass == 'pre')
+								blockContents = blockContents
+												.replace(/^[\r\n\s]+/, '')
+												.replace(/[\r\n\s]+$/, '');
+
+							lineBox.lastChild.appendChild(document.createTextNode(blockContents));
+							break;
+
+						case 'note':
+							break;
+
+						default:
+							lineBox.appendChild(document.createElement('vbox'));
+							lineBox.lastChild.setAttribute('class', blockClass+' block');
+							if (blockStyle)
+								lineBox.lastChild.setAttribute('style', blockStyle);
+							lineBox.lastChild.style.MozBoxAlign = this.data[this.offset].align;
+							blockContents = blockContents.join('\n')
+								.replace(/^[\r\n\s]+/, '')
+								.replace(/[\r\n\s]+$/, '')
+								.split('\n');
+							for (let j = 0, jmax = blockContents.length; j < jmax; j++)
+							{
+								lineBox.lastChild.appendChild(document.createElement('description'));
+								lineBox.lastChild.lastChild.setAttribute('value', blockContents[j]);
+							}
+							break;
 					}
 
 					blockClass    = '';
@@ -1617,6 +1563,7 @@ var Presentation = {
 				}
 			}
 
+			// process table rows
 			if (line.indexOf('|') == 0) {
 				fragment.appendChild(lineBox);
 
@@ -1637,7 +1584,7 @@ var Presentation = {
 					fragment.lastChild.lastChild.lastChild.lastChild.setAttribute('hidden-row', true);
 
 				line = line.split('|');
-				for (var j = 1, jmax = line.length; j < jmax; j++)
+				for (let j = 1, jmax = line.length; j < jmax; j++)
 				{
 					fragment.lastChild.lastChild.lastChild.lastChild.appendChild(document.createElement('vbox'));
 					fragment.lastChild.lastChild.lastChild.lastChild.lastChild.style.MozBoxAlign = this.data[this.offset].align;
@@ -1646,7 +1593,7 @@ var Presentation = {
 						line[j] = line[j].substring(1);
 					}
 					line[j] = line[j].split(/<br\s*\/>/g);
-					for (var k = 0, kmax = line[j].length; k < kmax; k++)
+					for (let k = 0, kmax = line[j].length; k < kmax; k++)
 					{
 						fragment.lastChild.lastChild.lastChild.lastChild.lastChild.appendChild(document.createElement('description'));
 						fragment.lastChild.lastChild.lastChild.lastChild.lastChild.lastChild.appendChild(document.createTextNode(line[j][k].replace(/^\s+|\s+$/g, '')));
@@ -1659,107 +1606,59 @@ var Presentation = {
 				continue;
 			}
 
-
-			while (line.match(lineRegExp))
+			let lineMatchResult;
+			while (lineMatchResult = line.match(lineRegExp))
 			{
-				if (RegExp.$1) {
+				if (lineMatchResult[1]) {
 					lineBox.appendChild(document.createElement('description'));
-					lineBox.lastChild.setAttribute('value', RegExp.$1);
+					lineBox.lastChild.setAttribute('value', lineMatchResult[1]);
 				}
-				newLine = line.substring((RegExp.$1+RegExp.$2).length);
+				let newLine = line.substring((lineMatchResult[1]+lineMatchResult[2]).length);
 
-				// Raw Codes: Parsed as XML
-				if (rawRegExp.test(line)) {
-					insertXMLTo('<hbox class="raw" style="'+RegExp.$4+'" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+RegExp.$5+'</hbox>', lineBox);
-				}
-				else if (rawStartRegExp.test(line)) {
-					inBlock       = true;
-					blockClass    = 'raw';
-					blockStyle    = RegExp.$4;
-					blockContents = [RegExp.$5];
-					newLine       = '';
-				}
+				let inlineMatchResult;
+				let blockStartMatchResult;
+				if (inlineMatchResult = line.match(inlineRegExp)) {
+					let className = inlineMatchResult[2].toLowerCase();
+					let style     = inlineMatchResult[3];
+					let contents  = inlineMatchResult[4];
+					switch (className)
+					{
+						case 'raw':
+						case 'encoded':
+							insertXMLTo('<hbox class="raw" style="'+style+'" onclick="event.stopPropagation();" onkeypress="event.stopPropagation();">'+contents+'</hbox>', lineBox);
+							break;
 
-				// ASCII Arts
-				if (aaRegExp.test(line)) {
-					lineBox.appendChild(document.createElement('description'));
-					if (RegExp.$3)
-						lineBox.lastChild.setAttribute('style', RegExp.$3);
-					lineBox.lastChild.setAttribute('value', RegExp.$4);
-					lineBox.lastChild.setAttribute('class', 'aa-text');
-				}
-				else if (aaStartRegExp.test(line)) {
-					inBlock       = true;
-					blockClass    = 'aa-text';
-					blockStyle    = RegExp.$3;
-					blockContents = [RegExp.$4];
-					newLine       = '';
-				}
+						default: // User-defined Styles
+							className = inlineMatchResult[2].substring(1);
+						case 'pre':
+						case 'aa':
+						case 'em':
+							lineBox.appendChild(document.createElement('description'));
+							lineBox.lastChild.setAttribute('class', className);
+							if (style)
+								lineBox.lastChild.setAttribute('style', style);
+							lineBox.lastChild.setAttribute('value', contents);
+							break;
 
-				// Preformatted Text
-				if (preRegExp.test(line)) {
-					lineBox.appendChild(document.createElement('description'));
-					if (RegExp.$3)
-						lineBox.lastChild.setAttribute('style', RegExp.$3);
-					lineBox.lastChild.setAttribute('value', RegExp.$4);
-					lineBox.lastChild.setAttribute('class', 'preformatted-text');
+						case 'note':
+							break;
+					}
 				}
-				else if (preStartRegExp.test(line)) {
+				else if (blockStartMatchResult = line.match(blockStartRegExp)) {
 					inBlock       = true;
-					blockClass    = 'preformatted-text';
-					blockStyle    = RegExp.$3;
-					blockContents = [RegExp.$4];
-					newLine       = '';
-				}
-
-				// Emphasis
-				else if (emRegExp.test(line)) {
-					lineBox.appendChild(document.createElement('description'));
-					if (RegExp.$3)
-						lineBox.lastChild.setAttribute('style', RegExp.$3);
-					lineBox.lastChild.setAttribute('value', RegExp.$4);
-					lineBox.lastChild.setAttribute('class', 'em-text');
-				}
-				else if (emStartRegExp.test(line)) {
-					inBlock       = true;
-					blockClass    = 'em-text';
-					blockStyle    = RegExp.$3;
-					blockContents = [RegExp.$4];
-					newLine       = '';
-				}
-
-				// User-defined Styles
-				else if (styleRegExp.test(line)) {
-					lineBox.appendChild(document.createElement('description'));
-					lineBox.lastChild.setAttribute('class', RegExp.$3);
-					if (RegExp.$5)
-						lineBox.lastChild.setAttribute('style', RegExp.$5);
-					lineBox.lastChild.setAttribute('value', RegExp.$6);
-				}
-				else if (styleStartRegExp.test(line)) {
-					inBlock       = true;
-					blockClass    = RegExp.$3;
-					blockStyle    = RegExp.$5;
-					blockContents = [RegExp.$6];
-					newLine       = '';
-				}
-
-				// notes
-				else if (noteRegExp.test(line)) {
-				}
-				else if (noteStartRegExp.test(line)) {
-					inBlock       = true;
-					blockClass    = 'note';
-					blockStyle    = RegExp.$3;
-					blockContents = [RegExp.$4];
+					blockClass    = blockStartMatchResult[2].toLowerCase();
+					if (blockClass.charAt(0) == '#') // User-defined Styles
+						blockClass = blockStartMatchResult[2].substring(1);
+					blockStyle    = blockStartMatchResult[3];
+					blockContents = [blockStartMatchResult[4]];
 					newLine       = '';
 				}
 
 				// Images
 				else if (imagesRegExp.test(line)) {
-					image_src = RegExp.$2;
-					image_width = -1;
-					image_height = -1;
+					let image_src = RegExp.$2;
+					let image_width = -1;
+					let image_height = -1;
 					if (RegExp.$3) {
 						if (RegExp.$4.toLowerCase() == 'width')
 							image_width = RegExp.$5 || '0';
@@ -1781,7 +1680,7 @@ var Presentation = {
 
 				// Links
 				else if (linksRegExp.test(line)) {
-					uri = this.resolve(RegExp.$4);
+					let uri = this.resolve(RegExp.$4);
 					lineBox.appendChild(document.createElement('description'));
 					lineBox.lastChild.setAttribute('value', RegExp.$3 || RegExp.$4);
 					lineBox.lastChild.setAttribute('href', uri);
@@ -1829,12 +1728,6 @@ var Presentation = {
 		}
 
 		retVal.fragment = fragment;
-		retVal.isComplete = function() {
-			return !loadedFlags.length ||
-				loadedFlags.every(function(aFlag) {
-					return aFlag.value;
-				});
-		};
 		return retVal;
 	},
 	createImage : function(aURI, aWidth, aHeight)
@@ -2066,7 +1959,6 @@ var Presentation = {
 
 		var dataPath;
 		var parts;
-		var i;
 		while (sources.length)
 		{
 			source = sources.shift();
@@ -2187,7 +2079,7 @@ var Presentation = {
 
 			imageMatchResults = source.match(imagesRegExp);
 			if (imageMatchResults) {
-				for (j = imageMatchResults.length-1; j > -1; j--)
+				for (let j = imageMatchResults.length-1; j > -1; j--)
 					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
 			}
 
@@ -2199,7 +2091,7 @@ var Presentation = {
 			source = source.replace(/^\s+|\s+$/g, '');
 
 			parts = this._splitPageToParts(source);
-			for (i = 0; i < parts.length; i++)
+			for (let i = 0; i < parts.length; i++)
 			{
 				source = parts.slice(0, i+1).join('');
 				if (i < parts.length-1)
