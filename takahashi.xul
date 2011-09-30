@@ -1609,16 +1609,20 @@ var Presentation = {
 			let lineMatchResult;
 			while (lineMatchResult = line.match(lineRegExp))
 			{
-				if (lineMatchResult[1]) {
+				let preFirstInlineTag = lineMatchResult[1] || '';
+				let firstInlineTag = lineMatchResult[2] || '';
+
+				if (preFirstInlineTag) {
 					lineBox.appendChild(document.createElement('description'));
-					lineBox.lastChild.setAttribute('value', lineMatchResult[1]);
+					lineBox.lastChild.setAttribute('value', preFirstInlineTag);
 				}
-				let newLine = line.substring((lineMatchResult[1]+lineMatchResult[2]).length);
+				let newLine = line.substring((preFirstInlineTag+firstInlineTag).length);
 
 				let inlineMatchResult;
 				let blockStartMatchResult;
 				if (inlineMatchResult = line.match(inlineRegExp)) {
-					let className = inlineMatchResult[2].toLowerCase();
+					let rawClassName = inlineMatchResult[2];
+					let className = rawClassName.toLowerCase();
 					let style     = inlineMatchResult[3];
 					let contents  = inlineMatchResult[4];
 					switch (className)
@@ -1629,7 +1633,7 @@ var Presentation = {
 							break;
 
 						default: // User-defined Styles
-							className = inlineMatchResult[2].substring(1);
+							className = rawClassName.substring(1);
 						case 'pre':
 						case 'aa':
 						case 'em':
