@@ -90,6 +90,9 @@ ALIGN::right
 ことも
 ---
 できる
+[[NOTE:
+「---」で区切ると1ページの内容を段階的に表示できる。
+]]
 ----
 HEADER::
 CHAPTER::編集機能
@@ -585,11 +588,13 @@ progressmeter .progress-remainder {
 }
 
 
-#plainTextBox {
+#plainTextBox,
+#noteTextBox {
 	background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1wYGCSMfVbRtUAAAAB10RVh0Q29tbWVudABDcmVhdGVkIHdpdGggVGhlIEdJTVDvZCVuAAAAGElEQVR42mNkYGCoZyACMDEQCUYVUkchANsIAJN3G7QXAAAAAElFTkSuQmCC');
 }
 
-#plainTextField {
+#plainTextField,
+#noteTextField {
 	font-family: monospace;
 	font-size: medium;
 	color: black;
@@ -776,6 +781,23 @@ tabbox, tabpanels, tabpanel {
 	-moz-box-pack: center;
 }
 
+#noteButton {
+	-moz-appearance: none;
+	color: #ff6600;
+	background: #ffe660;
+	border: #ff6600 1px solid;
+	border-width: 1px 1px 0 0;
+	-moz-border-radius: 0 1em 0 0;
+	margin: 0;
+	padding: 0.5em 0.5em 0.2em 0.2em;
+	min-width: 0;
+}
+#noteButton:hover {
+	background: #fff690;
+}
+#noteButton:active {
+	background: #ffd680;
+}
 
 
 .monta-label {
@@ -1028,6 +1050,22 @@ tabbox, tabpanels, tabpanel {
 				</hbox>
 				<spacer flex="1"/>
 			</vbox>
+			<hbox id="noteButtonBox" bottom="0" left="0"
+				hidden="true">
+				<button id="noteButton" label="Note!"
+					oncommand="Presentation.showNoteText(); event.stopPropagation();"/>
+			</hbox>
+			<vbox id="noteTextBox"
+				hidden="true"
+				flex="1"
+				onclick="Presentation.hideNoteText();"
+				align="center"
+				pack="center">
+				<textbox id="noteTextField" multiline="true"
+					readonly="true"
+					onkeypress="if (event.keyCode == event.DOM_VK_ESCAPE) Presentation.hideNoteText();"
+					onclick="event.stopPropagation();"/>
+			</vbox>
 			<vbox id="plainTextBox"
 				hidden="true"
 				flex="1"
@@ -1258,6 +1296,8 @@ var Presentation = {
 		this.pages    = document.getElementById('pageEditFields');
 		this.deck     = document.getElementById('deck');
 		this.scroller = document.getElementById('scroller');
+		this.noteButtonBox = document.getElementById('noteButtonBox');
+		this.noteButton = document.getElementById('noteButton');
 
 		this.toolbar         = document.getElementById('canvasToolbar');
 		this.toolbarHeight   = this.toolbar.boxObject.height;
@@ -1965,6 +2005,7 @@ var Presentation = {
 			this.sourceData.push(source);
 
 			let hidden = false;
+			let pageNote = '';
 			let commandMatchResult;
 			while ((commandMatchResult = source.match(commandLineRegExp)) && !hidden) {
 				source = source.replace(commandLineRegExp, '');
@@ -2020,7 +2061,7 @@ var Presentation = {
 						break;
 
 					case 'note':
-						lastNote = source;
+						pageNote = lastNote = source;
 						hidden = true;
 						break;
 
@@ -2088,7 +2129,7 @@ var Presentation = {
 
 			let noteMatchResults = source.replace(/\n/g, '<br/>').match(noteRegExp);
 			if (noteMatchResults) {
-				lastNote = (noteMatchResults[1] || '').replace(/<br\/>/g, '\n');
+				pageNote = lastNote = (noteMatchResults[1] || '').replace(/<br\/>/g, '\n');
 			}
 
 			source = source.replace(/^\s+|\s+$/g, '');
@@ -2106,7 +2147,8 @@ var Presentation = {
 					text   : source.split('\n'),
 					align  : align || alignGlobal,
 					size   : size || sizeGlobal,
-					note   : lastNote
+					note   : lastNote,
+					pageNote : pageNote
 				};
 				data.plain = parts.slice(0, i+1).join('')
 								.replace(plainTextRegExp, '$1$2$3$4$6$7')
@@ -2383,6 +2425,8 @@ var Presentation = {
 	},
 	updateNote : function()
 	{
+		this.noteButtonBox.hidden = !this.data[this.offset].pageNote;
+
 		if (!this.noteWindow)
 			return;
 
@@ -2399,6 +2443,32 @@ var Presentation = {
 			w.document.body.innerHTML = '<pre style="white-space:pre-wrap; font-size: large;"></pre>';
 			w.document.body.firstChild.textContent = aNote;
 		}, 100, this.data[this.offset].note);
+	},
+	showNoteText : function() 
+	{
+		if (this.noteTextShown) return;
+		this.noteTextShown = true;
+		this.noteTextBox.removeAttribute('hidden');
+		this.noteTextField.style.width = parseInt(this.canvasWidth * 0.8)+'px';
+		this.noteTextField.style.height = parseInt(this.canvasHeight * 0.8)+'px';
+		this.noteTextField.value = this.data[this.offset].pageNote;
+		this.noteTextField.focus();
+	},
+	hideNoteText : function() 
+	{
+		if (!this.noteTextShown) return;
+		this.noteTextShown = false;
+		this.noteTextBox.setAttribute('hidden', true);
+		this.noteTextField.value = '';
+	},
+	noteTextShown : false,
+	get noteTextBox()
+	{
+		return document.getElementById('noteTextBox');
+	},
+	get noteTextField()
+	{
+		return document.getElementById('noteTextField');
 	},
   
 /* auto cruise */ 
