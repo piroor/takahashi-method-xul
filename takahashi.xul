@@ -1499,10 +1499,12 @@ var Presentation = {
 				let endMatchResult = line.match(blockEndRegExp);
 				if (endMatchResult) {
 					inBlock = false;
+					let blockContent = endMatchResult[1] || '';
+					let blockEndTag = endMatchResult[2] || '';
 
 					if (blockClass != 'note')
-						blockContents.push(endMatchResult[1]);
-					line = line.substring((endMatchResult[1]+endMatchResult[2]).length);
+						blockContents.push(blockContent);
+					line = line.substring((blockContent+blockEndTag).length);
 
 					switch (blockClass)
 					{
@@ -2081,12 +2083,12 @@ var Presentation = {
 			imageMatchResults = source.match(imagesRegExp);
 			if (imageMatchResults) {
 				for (let j = imageMatchResults.length-1; j > -1; j--)
-					this.registerImage(imageMatchResults[j].match(imagesRegExp2)[1]);
+					this.registerImage((imageMatchResults[j] || '').match(imagesRegExp2)[1]);
 			}
 
 			let noteMatchResults = source.replace(/\n/g, '<br/>').match(noteRegExp);
 			if (noteMatchResults) {
-				lastNote = noteMatchResults[1].replace(/<br\/>/g, '\n');
+				lastNote = (noteMatchResults[1] || '').replace(/<br\/>/g, '\n');
 			}
 
 			source = source.replace(/^\s+|\s+$/g, '');
