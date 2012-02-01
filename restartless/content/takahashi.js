@@ -1376,7 +1376,7 @@ var Presentation = {
   
 /* print */ 
 	
-	print : function() 
+	print : function(aHalfSizeMode) 
 	{
 		if (!this.canMove) {
 			alert('Please wait for a while, and retry later.');
@@ -1392,7 +1392,7 @@ var Presentation = {
 		if (!this.isToolbarHidden)
 			this.showHideToolbar(true);
 
-		var uri = 'data:text/html,'+encodeURIComponent('<!DOCTYPE html>\n<html><head><title>'+document.title+'</title></head><body></body></html>');
+		var uri = 'data:text/html,'+encodeURIComponent('<!DOCTYPE html>\n<html><head><meta charset="UTF-8" /><title>'+document.title+'</title></head><body></body></html>');
 		this.printWindow = window.open(uri, 'PresentationPrint', 'dependent=yes,hotkeys=yes,location=yes,menubar=yes,personalbar=yes,scrollbars=yes,status=yes,toolbar=yes');
 		if (!this.printWindow) return;
 
@@ -1402,10 +1402,10 @@ var Presentation = {
 			this.printCanvas = document.createElementNS(XHTMLNS, 'canvas');
 
 		this.home();
-		this.printTimer = window.setInterval(this.printCallback, 0, this);
+		this.printTimer = window.setInterval(this.printCallback, 0, this, aHalfSizeMode);
 	},
 	 
-	printCallback : function(aThis) 
+	printCallback : function(aThis, aHalfSizeMode) 
 	{
 		if (
 			!aThis.canMove
@@ -1424,7 +1424,7 @@ var Presentation = {
 			var img  = doc.createElement('img');
 
 			var count = doc.querySelectorAll('.takahashi-method-xul-page').length;
-			if ((count+1) % 2 == 1) {
+			if (!aHalfSizeMode || (count+1) % 2 == 1) {
 				body.appendChild(doc.createElement('div'));
 	//			body.lastChild.style.clear = 'both';
 			}
@@ -1436,8 +1436,9 @@ var Presentation = {
 
 			var w = window.innerWidth;
 			var h = window.innerHeight;
-			var canvasW = parseInt(w * aThis.printSize);
-			var canvasH = parseInt(h * aThis.printSize);
+			var printSize = aHalfSizeMode ? aThis.printHalfSize : aThis.printFullSize ;
+			var canvasW = parseInt(w * printSize);
+			var canvasH = parseInt(h * printSize);
 
 			aThis.printCanvas.width  = canvasW;
 			aThis.printCanvas.height = canvasH;
@@ -1448,8 +1449,9 @@ var Presentation = {
 			img.style.height = canvasH+'px';
 
 			box.style.margin = '1em';
-			box.style.width  = parseInt(w * aThis.printSize)+'px';
-			box.style.cssFloat  = ((count+1) % 2 == 1) ? 'left' : 'right' ;
+			box.style.width  = parseInt(w * printSize)+'px';
+			if (aHalfSizeMode)
+				box.style.cssFloat  = ((count+1) % 2 == 1) ? 'left' : 'right' ;
 
 			try {
 				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
@@ -1457,7 +1459,7 @@ var Presentation = {
 				var ctx = aThis.printCanvas.getContext('2d');
 				ctx.clearRect(0, 0, canvasW, canvasH);
 				ctx.save();
-				ctx.scale(aThis.printSize, aThis.printSize);
+				ctx.scale(printSize, printSize);
 				ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
 				ctx.restore();
 				try {
@@ -1473,7 +1475,7 @@ var Presentation = {
 					ctx = box.lastChild.getContext('2d');
 					ctx.clearRect(0, 0, canvasW, canvasH);
 					ctx.save();
-					ctx.scale(aThis.printSize, aThis.printSize);
+					ctx.scale(printSize, printSize);
 					ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
 					ctx.restore();
 				}
@@ -1502,7 +1504,8 @@ var Presentation = {
 		this.isPrinting = false;
 	},
  
-	printSize   : 0.4, 
+	printFullSize : 0.9, 
+	printHalfSize : 0.4,
 	printTimer  : null,
 	printWindow : null,
 	printCanvas : null,

@@ -162,7 +162,8 @@ LOAD::takahashi.txt
 						</menupopup>
 					</menu>
 					<menuseparator/>
-					<menuitem oncommand="Presentation.print();" label="Print"/>
+					<menuitem oncommand="Presentation.print(true);" label="Print (Half size)"/>
+					<menuitem oncommand="Presentation.print(false);" label="Print (Full size)"/>
 					<menu id="auto-interval-button"
 						label="Thumbnail Format">
 						<menupopup
