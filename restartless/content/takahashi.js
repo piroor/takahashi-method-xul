@@ -758,6 +758,7 @@ var Presentation = {
 
 		var dataPath;
 		var parts;
+		var incomplete;
 		while (sources.length)
 		{
 			source = sources.shift();
@@ -905,7 +906,8 @@ var Presentation = {
 			for (let i = 0; i < parts.length; i++)
 			{
 				source = parts.slice(0, i+1).join('');
-				if (i < parts.length-1)
+				incomplete = i < parts.length-1;
+				if (incomplete)
 					source += '----\n'+parts.slice(i+1).join('');
 				data = {
 					load   : dataPath,
@@ -915,6 +917,7 @@ var Presentation = {
 					align  : align || alignGlobal,
 					size   : size || sizeGlobal,
 					note   : lastNote,
+					incomplete : incomplete,
 					pageNote : pageNote
 				};
 				data.plain = parts.slice(0, i+1).join('')
@@ -1409,77 +1412,82 @@ var Presentation = {
 			)
 			return;
 
-		var monta = document.getElementsByAttribute('monta-hidden', 'true');
-		if (monta && monta.length) {
-			for (var i = monta.length-1; i > -1; i--)
-				aThis.showMontaKeyword(monta[i], true);
-		}
-
-		var doc  = aThis.printWindow.document;
-		var body = doc.getElementsByTagName('body')[0];
-		var img  = doc.createElement('img');
-
-		if ((aThis.offset+1) % 2 == 1) {
-			body.appendChild(doc.createElement('div'));
-//			body.lastChild.style.clear = 'both';
-		}
-		var box = doc.createElement('div');
-		box.appendChild(doc.createElement('div'));
-		box.lastChild.appendChild(document.createTextNode(aThis.offset+1));
-		body.lastChild.appendChild(box);
-
-		var w = window.innerWidth;
-		var h = window.innerHeight;
-		var canvasW = parseInt(w * aThis.printSize);
-		var canvasH = parseInt(h * aThis.printSize);
-
-		aThis.printCanvas.width  = canvasW;
-		aThis.printCanvas.height = canvasH;
-		aThis.printCanvas.style.border = 'black solid medium';
-
-		img.style.border = 'black solid medium';
-		img.style.width  = canvasW+'px';
-		img.style.height = canvasH+'px';
-
-		box.style.margin = '1em';
-		box.style.width  = parseInt(w * aThis.printSize)+'px';
-		box.style.cssFloat  = ((aThis.offset+1) % 2 == 1) ? 'left' : 'right' ;
-
-		try {
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
-
-			var ctx = aThis.printCanvas.getContext('2d');
-			ctx.clearRect(0, 0, canvasW, canvasH);
-			ctx.save();
-			ctx.scale(aThis.printSize, aThis.printSize);
-			ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
-			ctx.restore();
-			try {
-				if (aThis.imageType == 'jpeg')
-					img.src = aThis.printCanvas.toDataURL('image/jpeg', 'quality=50');
-				else
-					img.src = aThis.printCanvas.toDataURL('image/png', 'transparency=none');
-
-				box.appendChild(img);
+		if (!aThis.data[aThis.offset].incomplete) {
+			var monta = document.getElementsByAttribute('monta-hidden', 'true');
+			if (monta && monta.length) {
+				for (var i = monta.length-1; i > -1; i--)
+					aThis.showMontaKeyword(monta[i], true);
 			}
-			catch(e) {
-				box.appendChild(aThis.printCanvas.cloneNode(true));
-				ctx = box.lastChild.getContext('2d');
+
+			var doc  = aThis.printWindow.document;
+			var body = doc.getElementsByTagName('body')[0];
+			var img  = doc.createElement('img');
+
+			var count = doc.querySelectorAll('.takahashi-method-xul-page').length;
+			if ((count+1) % 2 == 1) {
+				body.appendChild(doc.createElement('div'));
+	//			body.lastChild.style.clear = 'both';
+			}
+			var box = doc.createElement('div');
+			box.setAttribute('class', 'takahashi-method-xul-page');
+			box.appendChild(doc.createElement('div'));
+			box.lastChild.appendChild(document.createTextNode(count+1));
+			body.lastChild.appendChild(box);
+
+			var w = window.innerWidth;
+			var h = window.innerHeight;
+			var canvasW = parseInt(w * aThis.printSize);
+			var canvasH = parseInt(h * aThis.printSize);
+
+			aThis.printCanvas.width  = canvasW;
+			aThis.printCanvas.height = canvasH;
+			aThis.printCanvas.style.border = 'black solid medium';
+
+			img.style.border = 'black solid medium';
+			img.style.width  = canvasW+'px';
+			img.style.height = canvasH+'px';
+
+			box.style.margin = '1em';
+			box.style.width  = parseInt(w * aThis.printSize)+'px';
+			box.style.cssFloat  = ((count+1) % 2 == 1) ? 'left' : 'right' ;
+
+			try {
+				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
+
+				var ctx = aThis.printCanvas.getContext('2d');
 				ctx.clearRect(0, 0, canvasW, canvasH);
 				ctx.save();
 				ctx.scale(aThis.printSize, aThis.printSize);
 				ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
 				ctx.restore();
+				try {
+					if (aThis.imageType == 'jpeg')
+						img.src = aThis.printCanvas.toDataURL('image/jpeg', 'quality=50');
+					else
+						img.src = aThis.printCanvas.toDataURL('image/png', 'transparency=none');
+
+					box.appendChild(img);
+				}
+				catch(e) {
+					box.appendChild(aThis.printCanvas.cloneNode(true));
+					ctx = box.lastChild.getContext('2d');
+					ctx.clearRect(0, 0, canvasW, canvasH);
+					ctx.save();
+					ctx.scale(aThis.printSize, aThis.printSize);
+					ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
+					ctx.restore();
+				}
 			}
-		}
-		catch(e) {
-			alert('Error: Failed to create a document for printing.\n\n------\n'+e);
-			aThis.stopPrint();
-			return;
+			catch(e) {
+				alert('Error: Failed to create a document for printing.\n\n------\n'+e);
+				aThis.stopPrint();
+				return;
+			}
 		}
 
 		if (aThis.offset == aThis.data.length-1) {
 			aThis.stopPrint();
+			aThis.home();
 			aThis.printWindow.focus();
 		}
 		else {
