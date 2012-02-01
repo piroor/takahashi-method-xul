@@ -1402,7 +1402,7 @@ var Presentation = {
 			this.printCanvas = document.createElementNS(XHTMLNS, 'canvas');
 
 		this.home();
-		this.printTimer = window.setInterval(this.printCallback, 0, this, aHalfSizeMode);
+		this.printTimer = window.setTimeout(this.printCallback, 10, this, aHalfSizeMode);
 	},
 	 
 	printCallback : function(aThis, aHalfSizeMode) 
@@ -1410,7 +1410,7 @@ var Presentation = {
 		if (
 			!aThis.canMove
 			)
-			return;
+			return aThis.printTimer = window.setTimeout(arguments.callee, 10, aThis, aHalfSizeMode);
 
 		if (!aThis.data[aThis.offset].incomplete) {
 			var monta = document.getElementsByAttribute('monta-hidden', 'true');
@@ -1432,6 +1432,9 @@ var Presentation = {
 
 			var doc  = aThis.printWindow.document;
 			var body = doc.getElementsByTagName('body')[0];
+			if (!body) // not loaded yet
+				return aThis.printTimer = window.setTimeout(arguments.callee, 10, aThis, aHalfSizeMode);
+
 			var img  = doc.createElement('img');
 
 			var count = doc.querySelectorAll('.takahashi-method-xul-page').length;
@@ -1518,6 +1521,7 @@ var Presentation = {
 		}
 		else {
 			aThis.forward();
+			aThis.printTimer = window.setTimeout(arguments.callee, 10, aThis, aHalfSizeMode);
 		}
 	},
   
