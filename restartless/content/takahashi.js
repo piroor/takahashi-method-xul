@@ -1418,6 +1418,17 @@ var Presentation = {
 				for (var i = monta.length-1; i > -1; i--)
 					aThis.showMontaKeyword(monta[i], true);
 			}
+			var uris = [];
+			if (!aHalfSizeMode) {
+				let links = document.querySelectorAll('.link-text[href]');
+				Array.forEach(links, function(aLink) {
+					let uri = aLink.getAttribute('href');
+					if (uri &&
+						!/^(javascript:|#)/.test(uri) &&
+						uris.indexOf(uri) < 0)
+						uris.push(uri);
+				});
+			}
 
 			var doc  = aThis.printWindow.document;
 			var body = doc.getElementsByTagName('body')[0];
@@ -1478,6 +1489,19 @@ var Presentation = {
 					ctx.scale(printSize, printSize);
 					ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
 					ctx.restore();
+				}
+				if (uris.length) {
+					let ul = doc.createElement('ul');
+					for (let [i, uri] in Iterator(uris))
+					{
+						let link = doc.createElement('a');
+						link.setAttribute('href', uri);
+						link.appendChild(doc.createTextNode(uri));
+						let li = doc.createElement('li');
+						li.appendChild(link);
+						ul.appendChild(li);
+					}
+					box.appendChild(ul);
 				}
 			}
 			catch(e) {
