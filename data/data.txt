@@ -1,0 +1,4 @@
+put your presentation here.
+----
+LOAD::chrome://takahashi-method-xul-restartless/content/takahashi.txt
+
