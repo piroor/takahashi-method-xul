@@ -160,25 +160,25 @@ progressmeter .progress-remainder {
 	background: black !important;
 	color: white !important;
 	font-family:
-		"リュウミンU-KL"
-		"リュウミンH-KL"
-		"マティス-EB"
-		"RFファイン-ME"
-		"ＤＨＰ極太明朝体"
-		"ＤＦＰ極太明朝体"
-		"DHPMincho UB"
-		"DFPMincho UB"
-		"AR P明朝体U"
-		"Arphic PMincho Ultra JIS"
-		"AR明朝体U"
-		"Arphic Mincho Ultra JIS"
-		"HGP平成明朝体W9"
-		"HGPHeiseiMinchotaiW9"
-		"HGS平成明朝体W9"
-		"HGSHeiseiMinchotaiW9"
-		"HG平成明朝体W9"
-		"HGHeiseiMinchotaiW9"
-		"ヒラギノ明朝 Pro W6"
+		"リュウミンU-KL",
+		"リュウミンH-KL",
+		"マティス-EB",
+		"RFファイン-ME",
+		"ＤＨＰ極太明朝体",
+		"ＤＦＰ極太明朝体",
+		"DHPMincho UB",
+		"DFPMincho UB",
+		"AR P明朝体U",
+		"Arphic PMincho Ultra JIS",
+		"AR明朝体U",
+		"Arphic Mincho Ultra JIS",
+		"HGP平成明朝体W9",
+		"HGPHeiseiMinchotaiW9",
+		"HGS平成明朝体W9",
+		"HGSHeiseiMinchotaiW9",
+		"HG平成明朝体W9",
+		"HGHeiseiMinchotaiW9",
+		"ヒラギノ明朝 Pro W6",
 		serif !important;
 }
 #canvas[eva="true"] .em {

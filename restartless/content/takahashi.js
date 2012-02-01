@@ -181,7 +181,7 @@ var Presentation = {
 
 		if (this.data[this.offset].load) {
 			this.isRendering = false;
-			location.replace(location.href.split('?')[0] + '?'+this.data[this.offset].load);
+			location.replace(location.href.split('?')[0] + '?data='+this.data[this.offset].load);
 			return;
 		}
 
