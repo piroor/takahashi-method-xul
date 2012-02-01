@@ -1389,7 +1389,8 @@ var Presentation = {
 		if (!this.isToolbarHidden)
 			this.showHideToolbar(true);
 
-		this.printWindow = window.open('output.htm', 'PresentationPrint', 'dependent=yes,hotkeys=yes,location=yes,menubar=yes,personalbar=yes,scrollbars=yes,status=yes,toolbar=yes');
+		var uri = 'data:text/html,'+encodeURIComponent('<!DOCTYPE html>\n<html><head><title>'+document.title+'</title></head><body></body></html>');
+		this.printWindow = window.open(uri, 'PresentationPrint', 'dependent=yes,hotkeys=yes,location=yes,menubar=yes,personalbar=yes,scrollbars=yes,status=yes,toolbar=yes');
 		if (!this.printWindow) return;
 
 		this.isPrinting = true;
@@ -1397,7 +1398,6 @@ var Presentation = {
 		if (!this.printCanvas)
 			this.printCanvas = document.createElementNS(XHTMLNS, 'canvas');
 
-		this.printWindow.document.write('<html><head><title>'+document.title+'</title></head><body></body></html>');
 		this.home();
 		this.printTimer = window.setInterval(this.printCallback, 0, this);
 	},
