@@ -10,7 +10,7 @@ function handleWindow(aWindow)
 
 	ToolbarItem.create(<>
 		<toolbarbutton id="restartless-takahashi-method-xul"
-			oncommand="">
+			oncommand="gBrowser.selectedTab = gBrowser.addTab('chrome://takahashi-method-xul-restartless/content/takahashi.xul')">
 			<label value="Start Presentation"/>
 		</toolbarbutton>
 	</>, doc.getElementById('nav-bar'));
