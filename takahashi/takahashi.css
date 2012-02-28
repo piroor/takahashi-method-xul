@@ -88,6 +88,7 @@
 
 #canvas row > * {
 	border: 1px solid gray;
+	box-pack: center;
 	-moz-box-pack: center;
 }
 #canvas row + row {
@@ -123,6 +124,7 @@ progressmeter {
 progressmeter,
 progressmeter .progress-bar,
 progressmeter .progress-remainder {
+	appearance: none;
 	-moz-appearance: none;
 	background: transparent;
 	border: none;
@@ -144,13 +146,14 @@ progressmeter .progress-remainder {
 
 #plainTextField,
 #noteTextField {
-	font-family: monospace;
-	font-size: medium;
-	color: black;
+	appearance: none;
+	-moz-appearance: none;
 	background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH1wYGCTURrpT1gAAAAB10RVh0Q29tbWVudABDcmVhdGVkIHdpdGggVGhlIEdJTVDvZCVuAAAAGUlEQVR42mP8////fgYiABMDkWBUIXUUAgAEGgPQ5w4kBAAAAABJRU5ErkJggg==');
 	border: 2px solid gray;
 	border-color: black white white black;
-	-moz-appearance: none;
+	color: black;
+	font-family: monospace;
+	font-size: medium;
 }
 
 
@@ -233,9 +236,11 @@ progressmeter .progress-remainder {
 /* System:: DO NOT CHANGE FOLLOWING LINES!! */
 
 #content > hbox {
+	box-align: center;
 	-moz-box-align: center;
 }
 #content > vbox {
+	box-pack: center;
 	-moz-box-pack: center;
 }
 
@@ -326,20 +331,24 @@ tabbox, tabpanels, tabpanel {
 #indicatorBar,
 #indicatorBar hbox,
 #nextPage {
+	box-align: center;
 	-moz-box-align: center;
+	box-pack: center;
 	-moz-box-pack: center;
 }
 
 #noteButton {
+	appearance: none;
 	-moz-appearance: none;
-	color: #ff6600;
 	background: #ffe660;
 	border: #ff6600 1px solid;
 	border-width: 1px 1px 0 0;
+	border-radius: 0 1em 0 0;
 	-moz-border-radius: 0 1em 0 0;
+	color: #ff6600;
 	margin: 0;
-	padding: 0.5em 0.5em 0.2em 0.2em;
 	min-width: 0;
+	padding: 0.5em 0.5em 0.2em 0.2em;
 }
 #noteButton:hover {
 	background: #fff690;
