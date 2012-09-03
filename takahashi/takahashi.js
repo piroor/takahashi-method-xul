@@ -106,7 +106,7 @@ var Presentation = {
 		if (this.data.length)
 			document.title = this.data[0].title || this.data[0].header || this.data[0].text.join(' ');
 
-		var now = (new Date()).getTime();
+		var now = Date.now();
 		if (aStart === void(0)) aStart = now;
 
 		if (this.ready || now - aStart >= this.loadingTimeout)
@@ -1301,7 +1301,7 @@ var Presentation = {
  
 	setTimer : function(aStart, aEnd) 
 	{
-		var now = (new Date()).getTime();
+		var now = Date.now();
 		if (aStart !== void(0) && aEnd === void(0)) {
 			var rest = Math.abs(aStart);
 			this.timerStart = now;
@@ -1350,7 +1350,7 @@ var Presentation = {
  
 	updateTimer : function(aThis) 
 	{
-		var now = (new Date()).getTime();
+		var now = Date.now();
 		if (now >= aThis.timerEnd) {
 			aThis.resetTimer();
 			aThis.timer.setAttribute('value', 100);
@@ -1367,7 +1367,7 @@ var Presentation = {
 	{
 		var item = document.getElementById('timerItem');
 		if (this.timerTimer) {
-			item.setAttribute('label', item.getAttribute('label-active').replace(/%s/gi, Math.round((this.timerEnd - (new Date()).getTime()) / 60000)));
+			item.setAttribute('label', item.getAttribute('label-active').replace(/%s/gi, Math.round((this.timerEnd - Date.now()) / 60000)));
 		}
 		else {
 			item.setAttribute('label', item.getAttribute('label-normal'));
