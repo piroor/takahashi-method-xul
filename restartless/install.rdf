@@ -9,7 +9,9 @@
                    em:creator="YUKI &quot;Piro&quot; Hiroshi"
                    em:description="A presentation based on XUL technology."
                    em:homepageURL=""
-                   em:bootstrap="true">
+                   em:bootstrap="true"
+                   em:type="2"
+                   em:type="2">
 
     <em:updateURL></em:updateURL>
     <em:updateKey></em:updateKey>
