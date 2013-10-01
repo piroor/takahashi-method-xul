@@ -1389,6 +1389,7 @@ var Presentation = {
 		this.isExporting = true;
 		this._onExported = aOnExported;
 		this._onExportFinished = aOnExportFinished;
+		this._exportedCount = 0;
 
 		if (!this._exportCanvas)
 			this._exportCanvas = document.createElementNS(XHTMLNS, 'canvas');
@@ -1443,8 +1444,8 @@ var Presentation = {
 				ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
 				ctx.restore();
 
-				if (!this._onExported(this._exportCanvas)) // retry
-					return this.processExportWithDelay(aSize);
+				if (!this._onExported(this._exportCanvas, this._exportedCount++))
+					return this.processExportWithDelay(aSize); // retry
 			}
 			catch(e) {
 				alert('Error: Failed to export.\n\n------\n'+e);
@@ -1473,11 +1474,135 @@ var Presentation = {
 		this._exportTimer = null;
 		this._onExported = null;
 		this._onExportFinished = null;
+		this._exportedCount = 0;
 		this.isExporting = false;
 	},
  
 	_exportTimer  : null,
 	_exportCanvas : null,
+
+/* export to folder */ 
+	exportToFolder : function() 
+	{
+		if (!window.Components || !window.Components.classes) {
+			alert('XPConnect is not available. This feature cannot work without installation.');
+			return;
+		}
+		if (!this.canMove) {
+			alert('Please wait for a while, and retry later.');
+			return;
+		}
+
+		this.finishExport();
+
+		
+		window.resizeBy(1024 - window.innerWidth, 768 - window.innerHeight);
+
+		var picker = Components.classes['@mozilla.org/filepicker;1']
+						.createInstance(Components.interfaces.nsIFilePicker);
+		picker.init(window, 'Choose the output folder', picker.modeGetFolder);
+
+		function findExistingFolder(aFile) {
+			// Windows's file picker sometimes returns wrong path like
+			// "c:\folder\folder" even if I actually selected "c:\folder".
+			// However, when the "OK" button is chosen, any existing folder
+			// must be selected. So, I find existing ancestor folder from
+			// the path.
+			while (aFile && !aFile.exists() && aFile.parent)
+			{
+				aFile = aFile.parent;
+			}
+			return aFile;
+		}
+
+		var self = this;
+
+		if (typeof picker.open != 'function') { // Firefox 18 and olders
+			let folder = (picker.show() == picker.returnOK) ?
+							picker.file.QueryInterface(Components.interfaces.nsILocalFile) : null ;
+			window.setTimeout(function() {
+				folder = findExistingFolder(folder);
+				self.doExportToFolder(folder);
+			});
+			return;
+		}
+
+		picker.open({ done: function(aResult) {
+			if (aResult == picker.returnOK) {
+				let folder = picker.file.QueryInterface(Components.interfaces.nsILocalFile);
+				folder = findExistingFolder(folder);
+				self.doExportToFolder(folder);
+			}
+			else {
+				self.doExportToFolder(null);
+			}
+		}});
+	},
+	doExportToFolder : function(aFolder)
+	{
+		var win = Components.classes['@mozilla.org/appshell/window-mediator;1']
+				.getService(Components.interfaces.nsIWindowMediator)
+				.getMostRecentWindow('navigator:browser');
+		var self = this;
+		this.export(function(aCanvas, aIndex) {
+			return self.onImageExported(aCanvas, aIndex, win, aFolder);
+		});
+	},
+	onImageExported : function(aCanvas, aIndex, aChromeWindow, aFolder)
+	{
+		var uri;
+		var filename = ('0000' + aIndex).slice(-4);
+		if (this.imageType == 'jpeg') {
+			uri = aCanvas.toDataURL('image/jpeg', 'quality=50');
+			filename += '.jpg';
+		}
+		else {
+			uri = aCanvas.toDataURL('image/png', 'transparency=none');
+			filename += '.png';
+		}
+
+		var destFile = aFolder.clone();
+		destFile.append(filename);
+
+		var IOService = Components.classes['@mozilla.org/network/io-service;1']
+						.getService(Components.interfaces.nsIIOService);
+		uri = IOService.newURI(uri, null, null);
+		var autoChosen = new aChromeWindow.AutoChosen(destFile, uri);
+
+		if (aChromeWindow.internalSave.length < 12) { // Firefox 16 and olders
+			aChromeWindow.internalSave(
+				uri.spec,
+				null, // document
+				filename, // default file name
+				null, // content disposition
+				this.imageType,
+				false, // should bypass cache?
+				null, // title of picker
+				autoChosen,
+				null, // referrer
+				true, // skip prompt?
+				null // cache key
+			);
+		}
+		else {
+			aChromeWindow.internalSave(
+				uri.spec,
+				null, // document
+				filename, // default file name
+				null, // content disposition
+				this.imageType,
+				false, // should bypass cache?
+				null, // title of picker
+				autoChosen,
+				null, // referrer
+				document, // initiating document
+				true, // skip prompt?
+				null // cache key
+			);
+		}
+
+		return true;
+	},
 
 /* print */ 
 	
@@ -1506,8 +1631,8 @@ var Presentation = {
 
 		var self = this;
 		this.export(
-			function onExported(aCanvas) {
-				return self.onPrintExported(aCanvas, aHalfSizeMode, size);
+			function onExported(aCanvas, aIndex) {
+				return self.onPrintExported(aCanvas, aIndex. aHalfSizeMode, size);
 			},
 			function onExportFinished() {
 				self.onPrintExportFinished();
@@ -1515,7 +1640,7 @@ var Presentation = {
 			size
 		);
 	},
-	onPrintExported : function(aCanvas, aHalfSizeMode, aSize)
+	onPrintExported : function(aCanvas, aIndex, aHalfSizeMode, aSize)
 	{
 		var doc  = this.printWindow.document;
 		var body = doc.getElementsByTagName('body')[0];
