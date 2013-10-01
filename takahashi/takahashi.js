@@ -1374,8 +1374,116 @@ var Presentation = {
 		}
 	},
   
+/* export */
+	EXPORT_FAILED_MOVING : 1,
+	export : function(aOnExported, aOnExportFinished, aSize)
+	{
+		if (!this.canMove)
+			return this.EXPORT_FAILED_MOVING;
+
+		this.finishExport();
+
+		if (!this.isToolbarHidden)
+			this.showHideToolbar(true);
+
+		this.isExporting = true;
+		this._onExported = aOnExported;
+		this._onExportFinished = aOnExportFinished;
+
+		if (!this._exportCanvas)
+			this._exportCanvas = document.createElementNS(XHTMLNS, 'canvas');
+
+		this.home();
+		this.processExportWithDelay(aSize);
+	},
+
+	processExportWithDelay : function(aSize)
+	{
+		if (this._exportTimer)
+			window.clearInterval(this._exportTimer);
+
+		var self = this;
+		this._exportTimer = window.setTimeout(function() {
+			self.processExport(aSize);
+		}, 10);
+	},
+	processExport : function(aSize) 
+	{
+		if (!this.canMove)
+			return this.processExportWithDelay(aSize);
+
+		if (!this.data[this.offset].incomplete) {
+			var monta = document.getElementsByAttribute('monta-hidden', 'true');
+			if (monta && monta.length) {
+				for (var i = monta.length-1; i > -1; i--)
+					this.showMontaKeyword(monta[i], true);
+			}
+
+			var w = window.innerWidth;
+			var h = window.innerHeight;
+			var exportSize = aSize || 1;
+			var canvasW = parseInt(w * exportSize);
+			var canvasH = parseInt(h * exportSize);
+
+			this._exportCanvas.width  = canvasW;
+			this._exportCanvas.height = canvasH;
+			this._exportCanvas.style.border = 'black solid medium';
+
+			try {
+				if (window.netscape &&
+					netscape.security &&
+					netscape.security.PrivilegeManager &&
+					netscape.security.PrivilegeManager.enablePrivilege)
+					netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
+
+				var ctx = this._exportCanvas.getContext('2d');
+				ctx.clearRect(0, 0, canvasW, canvasH);
+				ctx.save();
+				ctx.scale(aSize, aSize);
+				ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
+				ctx.restore();
+
+				if (!this._onExported(this._exportCanvas)) // retry
+					return this.processExportWithDelay(aSize);
+			}
+			catch(e) {
+				alert('Error: Failed to export.\n\n------\n'+e);
+				this.finishExport();
+				return;
+			}
+		}
+
+		if (this.offset == this.data.length-1) {
+			this.finishExport();
+			this.home();
+		}
+		else {
+			this.forward();
+			this.processExportWithDelay(aSize);
+		}
+	},
+  
+	finishExport : function() 
+	{
+		window.clearInterval(this._exportTimer);
+
+		if (this._onExportFinished)
+			this._onExportFinished();
+
+		this._exportTimer = null;
+		this._onExported = null;
+		this._onExportFinished = null;
+		this.isExporting = false;
+	},
+ 
+	_exportTimer  : null,
+	_exportCanvas : null,
+
 /* print */ 
 	
+	printFullSize : 0.9,
+	printHalfSize : 0.4,
+	printWindow : null,
 	print : function(aHalfSizeMode) 
 	{
 		if (!this.canMove) {
@@ -1383,160 +1491,96 @@ var Presentation = {
 			return;
 		}
 
-		this.stopPrint();
+		this.finishExport();
 		if (this.printWindow) {
 			this.printWindow.close();
 			this.printWindow = null;
 		}
 
-		if (!this.isToolbarHidden)
-			this.showHideToolbar(true);
-
 		var uri = 'data:text/html,'+encodeURIComponent('<!DOCTYPE html>\n<html><head><meta charset="UTF-8" /><title>'+document.title+'</title></head><body></body></html>');
 		this.printWindow = window.open(uri, 'PresentationPrint', 'dependent=yes,hotkeys=yes,location=yes,menubar=yes,personalbar=yes,scrollbars=yes,status=yes,toolbar=yes');
-		if (!this.printWindow) return;
+		if (!this.printWindow)
+			return;
 
-		this.isPrinting = true;
+		var size = aHalfSizeMode ? this.printHalfSize : this.printFullSize ;
 
-		if (!this.printCanvas)
-			this.printCanvas = document.createElementNS(XHTMLNS, 'canvas');
-
-		this.home();
-		this.printTimer = window.setTimeout(this.printCallback, 10, this, aHalfSizeMode);
+		var self = this;
+		this.export(
+			function onExported(aCanvas) {
+				return self.onPrintExported(aCanvas, aHalfSizeMode, size);
+			},
+			function onExportFinished() {
+				self.onPrintExportFinished();
+			},
+			size
+		);
 	},
-	 
-	printCallback : function(aThis, aHalfSizeMode) 
+	onPrintExported : function(aCanvas, aHalfSizeMode, aSize)
 	{
-		if (
-			!aThis.canMove
-			)
-			return aThis.printTimer = window.setTimeout(arguments.callee, 10, aThis, aHalfSizeMode);
+		var doc  = this.printWindow.document;
+		var body = doc.getElementsByTagName('body')[0];
+		if (!body) // not loaded yet
+			return false;
 
-		if (!aThis.data[aThis.offset].incomplete) {
-			var monta = document.getElementsByAttribute('monta-hidden', 'true');
-			if (monta && monta.length) {
-				for (var i = monta.length-1; i > -1; i--)
-					aThis.showMontaKeyword(monta[i], true);
-			}
-			var uris = [];
-			if (!aHalfSizeMode) {
-				let links = document.querySelectorAll('.link-text[href]');
-				Array.forEach(links, function(aLink) {
-					let uri = aLink.getAttribute('href');
-					if (uri &&
-						!/^(javascript:|#)/.test(uri) &&
-						uris.indexOf(uri) < 0)
-						uris.push(uri);
-				});
-			}
-
-			var doc  = aThis.printWindow.document;
-			var body = doc.getElementsByTagName('body')[0];
-			if (!body) // not loaded yet
-				return aThis.printTimer = window.setTimeout(arguments.callee, 10, aThis, aHalfSizeMode);
-
-			var img  = doc.createElement('img');
-
-			var count = doc.querySelectorAll('.takahashi-method-xul-page').length;
-			if (!aHalfSizeMode || (count+1) % 2 == 1) {
-				body.appendChild(doc.createElement('div'));
-	//			body.lastChild.style.clear = 'both';
-			}
-			var box = doc.createElement('div');
-			box.setAttribute('class', 'takahashi-method-xul-page');
-			box.appendChild(doc.createElement('div'));
-			box.lastChild.appendChild(document.createTextNode(count+1));
-			body.lastChild.appendChild(box);
-
-			var w = window.innerWidth;
-			var h = window.innerHeight;
-			var printSize = aHalfSizeMode ? aThis.printHalfSize : aThis.printFullSize ;
-			var canvasW = parseInt(w * printSize);
-			var canvasH = parseInt(h * printSize);
-
-			aThis.printCanvas.width  = canvasW;
-			aThis.printCanvas.height = canvasH;
-			aThis.printCanvas.style.border = 'black solid medium';
-
-			img.style.border = 'black solid medium';
-			img.style.width  = canvasW+'px';
-			img.style.height = canvasH+'px';
-
-			box.style.margin = '1em';
-			box.style.width  = parseInt(w * printSize)+'px';
-			if (aHalfSizeMode)
-				box.style.cssFloat  = ((count+1) % 2 == 1) ? 'left' : 'right' ;
-
-			try {
-				netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
-
-				var ctx = aThis.printCanvas.getContext('2d');
-				ctx.clearRect(0, 0, canvasW, canvasH);
-				ctx.save();
-				ctx.scale(printSize, printSize);
-				ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
-				ctx.restore();
-				try {
-					if (aThis.imageType == 'jpeg')
-						img.src = aThis.printCanvas.toDataURL('image/jpeg', 'quality=50');
-					else
-						img.src = aThis.printCanvas.toDataURL('image/png', 'transparency=none');
-
-					box.appendChild(img);
-				}
-				catch(e) {
-					box.appendChild(aThis.printCanvas.cloneNode(true));
-					ctx = box.lastChild.getContext('2d');
-					ctx.clearRect(0, 0, canvasW, canvasH);
-					ctx.save();
-					ctx.scale(printSize, printSize);
-					ctx.drawWindow(window, 0, 0, w, h, 'rgb(255,255,255)');
-					ctx.restore();
-				}
-				if (uris.length) {
-					let ul = doc.createElement('ul');
-					for (let [i, uri] in Iterator(uris))
-					{
-						let link = doc.createElement('a');
-						link.setAttribute('href', uri);
-						link.appendChild(doc.createTextNode(uri));
-						let li = doc.createElement('li');
-						li.appendChild(link);
-						ul.appendChild(li);
-					}
-					box.appendChild(ul);
-				}
-			}
-			catch(e) {
-				alert('Error: Failed to create a document for printing.\n\n------\n'+e);
-				aThis.stopPrint();
-				return;
-			}
+		var uris = [];
+		if (!aHalfSizeMode) {
+			let links = document.querySelectorAll('.link-text[href]');
+			Array.forEach(links, function(aLink) {
+				let uri = aLink.getAttribute('href');
+				if (uri &&
+					!/^(javascript:|#)/.test(uri) &&
+					uris.indexOf(uri) < 0)
+					uris.push(uri);
+			});
 		}
 
-		if (aThis.offset == aThis.data.length-1) {
-			aThis.stopPrint();
-			aThis.home();
-			aThis.printWindow.focus();
+		var img  = doc.createElement('img');
+
+		var count = doc.querySelectorAll('.takahashi-method-xul-page').length;
+		if (!aHalfSizeMode || (count+1) % 2 == 1) {
+			body.appendChild(doc.createElement('div'));
+//			body.lastChild.style.clear = 'both';
 		}
-		else {
-			aThis.forward();
-			aThis.printTimer = window.setTimeout(arguments.callee, 10, aThis, aHalfSizeMode);
+		var box = doc.createElement('div');
+		box.setAttribute('class', 'takahashi-method-xul-page');
+		box.appendChild(doc.createElement('div'));
+		box.lastChild.appendChild(document.createTextNode(count+1));
+		body.lastChild.appendChild(box);
+
+		img.style.border = 'black solid medium';
+		img.style.width  = aCanvas.width+'px';
+		img.style.height = aCanvas.height+'px';
+
+		box.style.margin = '1em';
+		box.style.width  = parseInt(window.innerWidth * aSize)+'px';
+		if (aHalfSizeMode)
+			box.style.cssFloat  = ((count+1) % 2 == 1) ? 'left' : 'right' ;
+
+		if (this.imageType == 'jpeg')
+			img.src = aCanvas.toDataURL('image/jpeg', 'quality=50');
+		else
+			img.src = aCanvas.toDataURL('image/png', 'transparency=none');
+		box.appendChild(img);
+
+		if (uris.length) {
+			let ul = doc.createElement('ul');
+			for (let [i, uri] in Iterator(uris))
+			{
+				let link = doc.createElement('a');
+				link.setAttribute('href', uri);
+				link.appendChild(doc.createTextNode(uri));
+				let li = doc.createElement('li');
+				li.appendChild(link);
+				ul.appendChild(li);
+			}
+			box.appendChild(ul);
 		}
+
+		return true;
 	},
-  
-	stopPrint : function() 
-	{
-		window.clearInterval(this.printTimer);
-		this.printTimer = null;
-		this.isPrinting = false;
+	onPrintExportFinished: function() {
+		this.printWindow.focus();
 	},
- 
-	printFullSize : 0.9, 
-	printHalfSize : 0.4,
-	printTimer  : null,
-	printWindow : null,
-	printCanvas : null,
   
 /* view source */ 
 	
@@ -1619,7 +1663,7 @@ var Presentation = {
 			return;
 		}
 
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		var node = aEvent.target;
 		var inRawContents = false;
@@ -1730,7 +1774,7 @@ var Presentation = {
 	scrollThreshold : 10,
   
 	onKeyPress : function(aEvent) { 
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		switch(aEvent.keyCode)
 		{
@@ -1750,9 +1794,9 @@ var Presentation = {
 	 
 	onPresentationClick : function(aEvent) 
 	{
-		if (this.isPrinting) {
+		if (this.isExporting) {
 			if (confirm('Do you want printing operation to be stopped?')) {
-				this.stopPrint();
+				this.finishExport();
 			}
 			return;
 		}
@@ -1798,20 +1842,20 @@ var Presentation = {
 /* scrollbar */ 
 	
 	onScrollerDragStart : function(){ 
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		this.scroller.dragging = true;
 	},
  
 	onScrollerDragMove : function(){ 
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		if (this.scroller.dragging)
 			this.showPage(parseInt(this.scroller.getAttribute('curpos')));
 	},
  
 	onScrollerDragDrop : function(){ 
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		this.onScrollerDragMove();
 		this.scroller.dragging = false;
@@ -1821,7 +1865,7 @@ var Presentation = {
 	
 	onIndicatorBarClick : function(aEvent) 
 	{
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		var bar = this.indicatorBar;
 		this.showPage(Math.round((aEvent.screenX - bar.boxObject.screenX) / bar.boxObject.width * this.data.length));
@@ -1829,14 +1873,14 @@ var Presentation = {
  
 	onIndicatorBarDragStart : function() 
 	{
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		this.indicatorBar.dragging = true;
 	},
  
 	onIndicatorBarDragMove : function(aEvent) 
 	{
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		var bar = this.indicatorBar;
 		this.showPage(Math.round((aEvent.screenX - bar.boxObject.screenX) / bar.boxObject.width * this.data.length));
@@ -1844,7 +1888,7 @@ var Presentation = {
  
 	onIndicatorBarDragEnd : function(aEvent) 
 	{
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		this.onIndicatorBarDragMove(aEvent);
 		this.indicatorBar.dragging = false;
@@ -1908,7 +1952,7 @@ var Presentation = {
   
 	showHideToolbar : function(aWithoutAnimation) 
 	{
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 
 		if (this.toolbarAnimationTimer) window.clearTimeout(this.toolbarAnimationTimer);
 
@@ -2070,7 +2114,7 @@ var Presentation = {
 	},
  
 	onEditSource : function() { 
-		if (this.isPrinting) return;
+		if (this.isExporting) return;
 	},
 
  
