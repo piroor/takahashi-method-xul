@@ -1,29 +1,30 @@
 /**
  * @fileOverview Loader module for restartless addons
  * @author       YUKI "Piro" Hiroshi
- * @version      5
+ * @version      6
  *
  * @license
- *   The MIT License, Copyright (c) 2010-2011 YUKI "Piro" Hiroshi.
+ *   The MIT License, Copyright (c) 2010-2012 YUKI "Piro" Hiroshi.
  *   https://github.com/piroor/restartless/blob/master/license.txt
  * @url http://github.com/piroor/restartless
  */
 
 /** You can customize shared properties for loaded scripts. */
+var Application = (function() {
+	if ('@mozilla.org/fuel/application;1' in Components.classes)
+		return Components.classes['@mozilla.org/fuel/application;1']
+				.getService(Components.interfaces.fuelIApplication);
+	if ('@mozilla.org/steel/application;1' in Components.classes)
+		return Components.classes['@mozilla.org/steel/application;1']
+				.getService(Components.interfaces.steelIApplication);
+	return null;
+})();
 var _namespacePrototype = {
 		Cc : Components.classes,
 		Ci : Components.interfaces,
 		Cu : Components.utils,
 		Cr : Components.results,
-		Application : (
-			'@mozilla.org/fuel/application;1' in Components.classes ?
-				Components.classes['@mozilla.org/fuel/application;1']
-					.getService(Components.interfaces.fuelIApplication) :
-			'@mozilla.org/steel/application;1' in Components.classes ?
-				Components.classes['@mozilla.org/steel/application;1']
-					.getService(Components.interfaces.steelIApplication) :
-			null
-		)
+		Application : Application
 	};
 var _namespaces;
 
@@ -36,6 +37,7 @@ var _namespaces;
  *
  * @param {String} aScriptURL
  *   URL of a script. Wrapped version of load() can handle related path.
+
  *   Related path will be resolved based on the location of the caller script.
  * @param {Object=} aExportTargetForImport
  *   EXPORTED_SYMBOLS in the loaded script will be exported to the object.
@@ -65,7 +67,9 @@ function load(aURISpec, aExportTargetForImport, aExportTargetForRequire, aRoot)
 			.loadSubScript(aURISpec, ns);
 	}
 	catch(e) {
-		dump('Loader::load('+aURISpec+') failed!\n'+e+'\n');
+		let message = 'Loader::load('+aURISpec+') failed!\n'+e+'\n';
+		dump(message);
+		Components.utils.reportError(message + e.stack);
 		throw e;
 	}
 	_exportForImport(ns, aExportTargetForImport);
@@ -180,6 +184,44 @@ function doAndWait(aAsyncTask)
 	return returnedValue;
 }
 
+function _readFrom(aURISpec, aEncoding)
+{
+	const Cc = Components.classes;
+	const Ci = Components.interfaces;
+
+	var uri = aURISpec.indexOf('file:') == 0 ?
+			IOService.newFileURI(FileHandler.getFileFromURLSpec(aURISpec)) :
+			IOService.newURI(aURISpec, null, null) ;
+	var channel = IOService.newChannelFromURI(uri.QueryInterface(Ci.nsIURI));
+	var stream = channel.open();
+
+	var fileContents = null;
+	try {
+		if (aEncoding) {
+			var converterStream = Cc['@mozilla.org/intl/converter-input-stream;1']
+					.createInstance(Ci.nsIConverterInputStream);
+			var buffer = stream.available();
+			converterStream.init(stream, aEncoding, buffer,
+				converterStream.DEFAULT_REPLACEMENT_CHARACTER);
+			var out = { value : null };
+			converterStream.readString(stream.available(), out);
+			converterStream.close();
+			fileContents = out.value;
+		}
+		else {
+			var scriptableStream = Cc['@mozilla.org/scriptableinputstream;1']
+					.createInstance(Ci.nsIScriptableInputStream);
+			scriptableStream.init(stream);
+			fileContents = scriptableStream.read(scriptableStream.available());
+			scriptableStream.close();
+		}
+	}
+	finally {
+		stream.close();
+	}
+	return fileContents;
+}
+
 function _createNamespace(aURISpec, aRoot)
 {
 	var baseURI = aURISpec.indexOf('file:') == 0 ?
@@ -243,6 +285,10 @@ function _createNamespace(aURISpec, aRoot)
 								IOService.newURI(aURISpec, null, null) ;
 				return base.resolve(aURISpec);
 			},
+			/* utility to read contents of a text file */
+			read : function(aURISpec, aEncoding, aBaseURI) {
+				return _readFrom(this.resolve(aURISpec, aBaseURI), aEncoding);
+			},
 			doAndWait : function(aAsyncTask) {
 				return doAndWait(aAsyncTask);
 			},
@@ -282,7 +328,9 @@ function _callHandler(aHandler, aReason)
 				_namespaces[i][aHandler](aReason);
 		}
 		catch(e) {
-			dump(i+'('+aHandler+', '+aReason+')\n'+e+'\n');
+			let message = i+'('+aHandler+', '+aReason+')\n'+e+'\n';
+			dump(message);
+			Components.utils.reportError(message + e.stack);
 		}
 	}
 }
@@ -327,6 +375,8 @@ function shutdown(aReason)
 		}
 	}
 	_namespaces = void(0);
+	_namespacePrototype = void(0);
+	Application = void(0);
 
 	IOService = void(0);
 	FileHandler = void(0);
