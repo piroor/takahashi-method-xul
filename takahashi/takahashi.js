@@ -1495,8 +1495,9 @@ var Presentation = {
 
 		this.finishExport();
 
-		
-		window.resizeBy(1024 - window.innerWidth, 768 - window.innerHeight);
+		var deltaW = 1024 - window.innerWidth;
+		var deltaH = 768 - window.innerHeight;
+		window.resizeBy(deltaW, deltaH);
 
 		var picker = Components.classes['@mozilla.org/filepicker;1']
 						.createInstance(Components.interfaces.nsIFilePicker);
@@ -1522,8 +1523,8 @@ var Presentation = {
 							picker.file.QueryInterface(Components.interfaces.nsILocalFile) : null ;
 			window.setTimeout(function() {
 				folder = findExistingFolder(folder);
-				self.doExportToFolder(folder);
-			});
+				self.doExportToFolder(folder, deltaW, deltaH);
+			}, 0);
 			return;
 		}
 
@@ -1531,22 +1532,27 @@ var Presentation = {
 			if (aResult == picker.returnOK) {
 				let folder = picker.file.QueryInterface(Components.interfaces.nsILocalFile);
 				folder = findExistingFolder(folder);
-				self.doExportToFolder(folder);
+				self.doExportToFolder(folder, deltaW, deltaH);
 			}
 			else {
-				self.doExportToFolder(null);
+				self.doExportToFolder(null, deltaW, deltaH);
 			}
 		}});
 	},
-	doExportToFolder : function(aFolder)
+	doExportToFolder : function(aFolder, aDeltaW, aDeltaH)
 	{
 		var win = Components.classes['@mozilla.org/appshell/window-mediator;1']
 				.getService(Components.interfaces.nsIWindowMediator)
 				.getMostRecentWindow('navigator:browser');
 		var self = this;
-		this.export(function(aCanvas, aIndex) {
-			return self.onImageExported(aCanvas, aIndex, win, aFolder);
-		});
+		this.export(
+			function onExported(aCanvas, aIndex) {
+				return self.onImageExported(aCanvas, aIndex, win, aFolder);
+			},
+			function onExportFinished() {
+				window.resizeBy(-aDeltaW, -aDeltaH);
+			}
+		);
 	},
 	onImageExported : function(aCanvas, aIndex, aChromeWindow, aFolder)
 	{
