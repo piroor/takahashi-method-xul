@@ -880,7 +880,8 @@ var Presentation = {
 
 					case 'define-alias':
 					case 'alias':
-						let (aliasMatchResult = value.match(/([^=]+)=(.+)/)) {
+						{
+							let aliasMatchResult = value.match(/([^=]+)=(.+)/);
 							this._alias[aliasMatchResult[1]] = aliasMatchResult[2];
 						}
 						break;
