@@ -1521,7 +1521,7 @@ var Presentation = {
 
 		if (typeof picker.open != 'function') { // Firefox 18 and olders
 			let folder = (picker.show() == picker.returnOK) ?
-							picker.file.QueryInterface(Components.interfaces.nsILocalFile) : null ;
+							picker.file.QueryInterface(Components.interfaces.nsIFile) : null ;
 			window.setTimeout(function() {
 				folder = findExistingFolder(folder);
 				self.doExportToFolder(folder, deltaW, deltaH);
@@ -1531,7 +1531,7 @@ var Presentation = {
 
 		picker.open({ done: function(aResult) {
 			if (aResult == picker.returnOK) {
-				let folder = picker.file.QueryInterface(Components.interfaces.nsILocalFile);
+				let folder = picker.file.QueryInterface(Components.interfaces.nsIFile);
 				folder = findExistingFolder(folder);
 				self.doExportToFolder(folder, deltaW, deltaH);
 			}
